@@ -1,0 +1,47 @@
+h1. ./bin/
+
+h2. ./buildIndex.sh
+
+Auführbares Bash-Skript, was alle bis dahin erstellten Solr Indizes mit Daten der Cores füllt. ACHTUNG: bereits bestehende Solr Indexe werden damit überschrieben (bzw. erweitert)!
+*TODO:* Möglichkeit der Angabe von bestimmten Cores hinzufügen
+
+bc. $ ./buildIndex.sh [TODO cores]
+
+* *TODO cores*: optionaler Parameter; wird angegeben, wenn nur ein oder mehrere bestimmte(r) Core(s) in den Solr Index gepusht werden soll(en)
+
+h2. ./createCore.sh
+
+Auführbares Bash-Skript, einen neuen leeren Solr-Core erstellt. Die ensprechenden Dateien werden automatisch generiert und die Konfiguration für die Solr-Cores entsprechend der Anweisungsroutine aktualisiert.
+
+bc. $ ./createCore.sh newCoreName
+
+* *newCoreName* Name eines neuen Verbundes, der als Core hinzugefügt werden soll
+
+h2. ./deleteCore.sh
+
+Auführbares Bash-Skript, einen vorhandenen Solr-Core löscht. 
+ACHTUNG: Es werden alle indizierten Daten, sowie initialen Daten und Updates und sonstigen Konfigurationseinträge für den entsprechenden Core gelöscht! Sollte nur ausgeführt werden, wenn absolut notwendig.
+
+bc. $ ./deleteCore.sh coreName
+
+* *coreName* Name eines neuen Verbundes, der als Core hinzugefügt werden soll
+
+
+h2. ./getResults.sh
+
+Auführbares Bash-Skript, was parameterlos ein Perl Skript startet und die im Ordner ../etc/solrQuery.ini befindlichen Filter anwendet.
+
+bc. $ ./getResults.sh 
+
+
+h2. ./removeUpdates.sh
+
+Auführbares Bash-Skript, was parameterlos alle Updates der Verbünde löscht, da Updates auf Dauer nicht gespeichert werden sollen und die Änderungen i.d.R. im Solr-Index bereits angepasst sind.
+
+bc. $ ./removeUpdates.sh 
+
+
+h2. ./runUpdates.sh
+
+Auführbares Bash-Skript, was parameterlos aufgerufen wird und nach Updates für die jeweilien Cores an den verschiedenen Schnittstellen sucht. Das Skript selbst sollte nicht händisch gerufen werden, sondern durch einen Cron-Job jeweils stündlich/täglich automatisch aufgerufen werden.
+

@@ -1,5 +1,6 @@
 # ide files
 .project
+.settings/
 
 # runtime files
 /log/*.*

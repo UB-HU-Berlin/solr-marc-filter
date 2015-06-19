@@ -1,7 +1,34 @@
 # solr-marc-filter
+
 Indizierung von MARC21-Daten und anschließende Filterung nach Kriterium zur Generierung eines Extractes - kurzum - ein Sieb zum Erstellen von bspw. Fachausschnitten
 
 Dies ist ein Projekt der Universitätsbibliothek der Humboldt-Universität zu Berlin, welches im Rahmen der Fachinfomationsdienste (FID)gestarter wurde. Hiermit sollen möglichst alle deutschen Verbunddaten indizier- und damit durchsuchbar gemacht werden, um darüber spezifische Fachausschnitte für ein jeweiliges FID zu generieren.
+
+## Abhängigkeiten
+
+Diese Projekt benötigt bzw. ist abhängig von folgenden Komponenten (getestet)
+
+- [Apache Solr](http://lucene.apache.org/solr/) v4.8.1 
+- [SolrMarc](https://code.google.com/p/solrmarc/source/checkout) SVN-Revision r17461
+- Perl v5.8.9 mit folgenden Modulen
+    - Apache::Solr
+    - Archive::Extract
+    - Config::INI
+    - Data::Dumper
+    - HTTP::OAI
+    - JSON::Parse
+    - LWP::Simple
+    - LWP::UserAgent
+    - MARC::Batch
+    - MARC::Field
+    - MARC::File
+    - Net::SCP
+    - Net::SSH
+    - Sys::Info
+    - Text::Unidecode
+    - Time::Piece
+    - Try::Tiny
+    - XML::Simple
 
 ## Struktur
 
