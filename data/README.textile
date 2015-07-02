@@ -1,0 +1,29 @@
+h1. ./data/
+
+h2. Struktur
+
+Das Verzeichnis enthält alle Cores (Verbünde), die in der Solr Instanz angezeigt, verwaltet und geupdatet werden. 
+
+h3. ./core/conf/config.properties
+
+* enthält Core-spezifische Einstellungen und Pfadangaben, die bei der Erstellung eines neuen Cores (Verbundes) automatisch angelegt werden
+* nachträgliche Änderung i.d.R. nicht mehr notwendig
+
+h3. ./core/conf/index.properties
+
+* enthält alle Core-spezifischen Angaben, welche Felder der Daten indiziert werden sollen
+* nachträgliche Änderung ist möglich und notwendig, z.B. wenn bibliotheksspezifische Angaben wie (Bibliotheks-)Sigel im Index gelistet werden soll
+* alle Änderungen müssen erfolgen bevor ../bin/buildInitialIndex.sh ausgeführt wird, da sonst die jeweiligen Felder nicht mehr indiziert werden
+
+h3. ./core/initialData/
+
+* enthält die intialen Daten vom jeweiligen Verbund
+
+h3. ./coreX/updates/
+
+* enthält die Core-spezifischen Updates
+
+h3. ./core/updates/lastUpdates.txt
+
+* enthält abhängig von der Update API entweder den letzten Zeitstempel des korrekten Updates (bei OAI) oder die Dateinamen von den bereits durchgeführten Updates (bei FTP/SCP)
+* sollte nicht verändert werden

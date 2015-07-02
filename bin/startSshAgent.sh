@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# TODO: wann werden diese envs ungültig?
-# TODO: was ist mit ssh-agnet beim logout des benutzers - z.b. wäre es sinnvoll unter nobody agent zu starten sodass agent nicht schließt?
-
 ## set paths
 pathToFachkatalogGlobal="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
 pathToEtc="$pathToFachkatalogGlobal/etc"
@@ -24,6 +21,7 @@ done
 
 
 ## function to start the ssh-agent and ask for pass if needed
+## Notice: ssh-agent also runs after logout of user
 function startAgent(){
 	eval $(ssh-agent); ssh-add $pathToPrivateKey
 }
@@ -44,7 +42,7 @@ then
 fi
 
 
-## 	check if $SSH_AUTH_SOCK and $SSH_AGENT_PID are used and if $SSH_AGENT_PID is running as process
+## check if $SSH_AUTH_SOCK and $SSH_AGENT_PID are used and if $SSH_AGENT_PID is running as process
 ## 	info: <&3 to enable reading from command line for password while reading a file
 ## 	info: -r and -n flags: to enable reading for files not escaped with newline
 while read -r line <&3 || [[ -n "$line" ]]; do

@@ -21,7 +21,6 @@ done
 
 read number
 reNumber="^[0-$j]"
-d="[[:digit:]]"
 while ! [[ $number =~ $reNumber ]]
 do
    echo "Not a valid number!"

@@ -16,7 +16,7 @@ Diese Projekt benötigt bzw. ist abhängig von folgenden Komponenten (getestet)
     - Config::INI
     - Data::Dumper
     - HTTP::OAI
-    - (JSON::Parse)
+    - JSON::Parseasdasd
     - LWP::Simple
     - LWP::UserAgent
     - MARC::Batch

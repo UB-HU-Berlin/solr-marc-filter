@@ -3,7 +3,11 @@
 .settings/
 
 # runtime files
-/log/*.*
+/data/*
+!/data/README.textile
+/docu/tex/*
+/results/*
+/log/*
 
 # OS generated files #
 ######################

@@ -67,6 +67,12 @@ do
    read updateType
 done
 
+#TODO check
+if [ "$updateType" == "ssh" ]
+then
+	./startSshAgent.sh
+fi
+
 echo "Choose update intervals in days: "
 read updateIntervalInDays
 
