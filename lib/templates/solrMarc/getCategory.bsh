@@ -1,0 +1,110 @@
+/**
+ * Custom call number script.
+ *
+ * This can be used to override built-in SolrMarc custom functions.  If you change
+ * this script, you will need to activate it in import/marc_local.properties before
+ * it will be applied during indexing.
+ */
+import org.marc4j.marc.Record;
+import org.marc4j.*;
+import org.marc4j.marc.*;
+
+import org.solrmarc.marcoverride.NoSortRecordImpl;
+
+// define the base level indexer so that its methods can be called from the script.
+// note that the SolrIndexer code will set this value before the script methods are called.
+org.solrmarc.index.SolrIndexer indexer = null;
+
+public String getCategoryTypeAndNr(Record record){
+	String categoryType = indexer.getFirstFieldVal(record, "0842");
+	String categoryNr   = indexer.getFirstFieldVal(record, "084a");
+	
+	if(categoryType!=null && categoryNr!=null){
+		String catTypeNr = categoryType+":"+categoryNr;
+		return catTypeNr;
+	}
+	return "";
+}
+
+public String getCertainCategoryNr(Record record, String categoryType){
+	
+	List catTypesL = indexer.getFieldListAsList(record, "0842");
+	String[] catNrsA = indexer.getAllAlphaSubfields(record, "084", "all").toArray( new String[]{} );
+
+	String delimiter = "#";
+	Set categories = getAllCategories(record, "084", delimiter);
+	String[] categoriesA = categories.toArray(new String[]{});
+	String results = "";
+		
+	for(int i = 0; i<categoriesA.length; i++){
+		int k = categoriesA[i].indexOf(":"+categoryType);
+		
+		if( k != -1 ){
+			results = results + delimiter + categoriesA[i].substring(0, k);
+			k = 0;
+		}
+	}
+	//System.err.println("results " + categoryType + ": " + results);
+	return results;
+}
+
+
+public Set getAllCategories(Record record, String fieldSpec, String delimiter){
+	Set resultSet = new LinkedHashSet();
+	//System.err.println("using own beanShell getAllAlphaSubfields() method");
+	
+	String[] fldTags = fieldSpec.split(":");
+	for (int i = 0; i < fldTags.length; i++){
+	    String fldTag = fldTags[i];
+	    if (fldTag.length() < 3 || Integer.parseInt(fldTag) < 10)
+	    {
+		System.err.println("Invalid marc field specified for getAllCategories: " + fldTag);
+		continue;
+	    }
+
+	    List varFlds = record.getVariableFields(fldTag);
+	    for (VariableField vf : varFlds)
+	    {
+
+		StringBuffer buffer = new StringBuffer(500);
+
+		DataField df = (DataField) vf;
+		if (df != null)
+		{
+		    List subfields = df.getSubfields();
+		    //System.err.println("subfields: " + subfields);
+		    for (Subfield sf : subfields)
+		    {
+			//System.err.println("sf.getCode(): " + sf.getCode());
+		        if (new String("2").equals(Character.toString(sf.getCode())))
+		        {
+			    //System.err.println("sf.getData().trim(): " + sf.getData().trim());
+		            if (buffer.length() > 0) {
+		                buffer.append(":" + sf.getData().trim());
+		            } else {
+		                buffer.append(":" + sf.getData().trim());
+		            }
+		        }
+			if (new String("a").equals(Character.toString(sf.getCode())))
+		        {
+			    //System.err.println("sf.getData().trim(): " + sf.getData().trim());
+		            if (buffer.length() > 0) {
+		                buffer.append(delimiter + sf.getData().trim());
+		            } else {
+		                buffer.append(sf.getData().trim());
+		            }
+		        }
+		    }
+		}
+		if (buffer.length() > 0)
+		    resultSet.add(buffer.toString());
+	    }
+	}
+	return resultSet;
+}
+
+public String writeFixName(Record record, String name){
+	return name;
+}
+
+

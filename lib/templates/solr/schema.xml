@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--  
+    For information on how to customize this file, please see
+    http://wiki.apache.org/solr/SchemaXml.  The page also has a link to an 
+    extensively commented version of this file.
+-->
+<schema name="Blacklight Demo Index" version="1.5">
+ <!-- <types> -->
+    <fieldType name="string" class="solr.StrField" sortMissingLast="true" omitNorms="true"/>
+    <fieldType name="long" class="solr.TrieLongField" omitNorms="true"/>
+    <fieldType name="date" class="solr.TrieDateField" sortMissingLast="true" omitNorms="true"/>
+<!--
+	own fieldTypes
+-->
+    <fieldType name="categories" class="solr.TextField">
+	<analyzer type="index">
+	  <tokenizer class="solr.PatternTokenizerFactory" pattern="[#]"/>
+	  <filter class="solr.LowerCaseFilterFactory"/>
+	</analyzer>
+    </fieldType>
+    <fieldType name="keywords" class="solr.TextField">
+	<analyzer type="index">
+	  <filter class="solr.LowerCaseFilterFactory"/>
+	  <tokenizer class="solr.PatternTokenizerFactory" pattern="[#]"/>
+	</analyzer>
+    </fieldType>
+
+ <!-- </types> -->
+
+  <!-- <fields>  -->
+    <!-- NOTE: this is not a full list of fields in the index; dynamic fields are also used -->
+    <field name="_version_" type="long" indexed="true" stored="true" multiValued="false"/>
+    <field name="id" type="string" indexed="true" stored="true" required="true" />
+    <field name="timestamp" type="date" indexed="false" stored="false" default="NOW" multiValued="false"/>
+    <!-- default, catch all search field -->
+     
+
+    <!-- own defined fields -->
+    <field name="publishDate" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="keywords" type="keywords" indexed="true" stored="false" multiValued="true"/>
+
+    <field name="verbund" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="sigel" type="string" indexed="true" stored="false" multiValued="true"/>
+
+    <!-- these display fields are NOT multi-valued -->
+    <field name="marc_display" type="string" indexed="false" stored="true" multiValued="false"/>
+
+
+    <dynamicField name="*_category" type="categories" indexed="true" stored="false" multiValued="true"/>
+    <!-- </fields> -->
+
+  <uniqueKey>id</uniqueKey>
+  <defaultSearchField>id</defaultSearchField>
+  <solrQueryParser defaultOperator="OR"/>
+
+
+</schema>

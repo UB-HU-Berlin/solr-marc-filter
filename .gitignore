@@ -5,7 +5,12 @@
 # runtime files
 /data/*
 !/data/README.textile
+
 /docu/tex/*
+
+/etc/
+!/etc/config.ini.plain
+
 /results/*
 /log/*
 

@@ -1,0 +1,56 @@
+h1. ./lib/
+
+h2. ./templates/
+
+Verzeichnis, dass die für das Anlegen von neuen Cores benötigten Dateien enthält. Sowohl für Solr als auch für solrMarc sind Verzeichnisse mit Templates vorgesehen.
+
+h2. ./buildInitialindexThreading.pl
+
+Auführbares Perl-Skript, was von ../bin/buildIndex.sh gerufen wird und alle initialen Daten in ../data/initialData an den Solr Server pusht.
+
+bc. $ ./buildInitialindexThreading.pl 
+
+
+h2. ./getResults.pl
+
+Auführbares Perl-Skript, was parameterlos die im Ordner ../etc/solrQuery.ini befindlichen Filter anwendet und die entsprechenden Ergebnisse in ../results/ ausgibt. 
+
+bc. $ ./getResults.pl 
+
+
+h2. ./getUpdates.pl
+
+Ausführbares Perl-Skript, was mit einem Core als Parameter von ./scheduler.pl gerufen wird, um die jewiligen Updates in das entsprechende Core Verzeichnis (../data/core/updates/) herunterzuladen und ggf. zu entpacken.
+
+h2. ./helper.pl
+
+Enthält wichtige Funktionen für das Logging und anderes und wird durch die anderen Perl-Skripte verwendet. 
+
+
+h2. ./removeCoreFromIni.pl
+
+Auführbares Perl-Skript, was von ../bin/removeCore.sh verwendet wird. Sollte nicht allein gerufen werden.
+
+
+h2. ./removeUpdates.pl
+
+Auführbares Perl-Skript, was parameterlos alle Updates der Verbünde löscht, da Updates auf Dauer nicht gespeichert werden sollen und die Änderungen i.d.R. im Solr-Index bereits angepasst sind. 
+ACHTUNG: Es werden hier die Updates aller Verbünde gelöscht! Das initiale Laden der Updates kann ggf. mehrere Stunden in Anspruch nehmen! Daher sollte genau bedacht werden, wann die Updates gelöscht werden.
+
+bc. $ ./removeUpdates.pl 
+
+
+h2. ./scheduler.pl
+
+Auführbares Perl-Skript, was parameterlos von ../bin/getUpdates.sh gerufen wird. Das Skript prüft, wann das letzte Update stattgefunden hat und ob ein neues Update ausgeführt werden soll. Ist das der Fall, ruft es zunächst *./getUpdates.pl*, um die Updates in das jeweilige Verbunds-Verzeichnis herunterzuladen und anschließend *updateDelete.pl*, um die Änderungen in den jeweiligen Cores der Solr Instanz auszuführen. Diese Aktion kann mehrere Minuten (ggf. Stunden) dauern!
+
+bc. $ ./scheduler.pl
+
+
+h2. ./updateDelete.pl
+
+Ausführbares Per-Skript, was mit dem jeweiligen Core als Parameter von ./scheduler gerufen wird und die heruntergeladenen Updates im Verzeichnis ../data/core/updates/ an die Solr Instanz pusht.
+Diese Aktion kann mehrere Minuten (ggf. Stunden) dauern!
+
+
+
