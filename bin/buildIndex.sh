@@ -10,6 +10,7 @@ j=0
 echo "[$j] ABORT"
 array[$j]="ABORT";
 
+# show all existing cores and let the user select one
 for i in $( ls -d */ );
 do
 	let "j+=1";
