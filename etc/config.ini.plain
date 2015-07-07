@@ -1,0 +1,34 @@
+## You MUST change the following variable-pathes before using one of the scripts
+pathToFachkatalogGlobal = /CHANGE/THIS/PATH/fachkatalog/
+pathIndexfile = /CHANGE/THIS/PATH/solrMarcSource/script_templates/indexfile
+pathToSolrCoresDefault = /CHANGE/THIS/PATH/solr/solr-4.X.X/example/solr/
+pathToSolrMarcDefault = /CHANGE/THIS/PATH/solrMarcSource/
+
+## Standard values
+pathLogFile = log/log.txt
+pathLogFileAlternative = log/log_rest.txt
+urlSolrDefault = http://127.0.0.1:8983/solr/
+resultsMaxRecordsPerFile = 10000
+resultsMaxNumber = 0
+pathQuery = etc/solrQuery.ini
+serverResponseTimeoutSec = 1800
+pathResults = results/
+resultType = mrc
+
+## after creating a core there will be cores under this section e.g.
+## [gbv]
+## updateType = ssh
+## indexPropertiesFile = data/gbv/conf/index.properties
+## configPropertiesFile = data/gbv/conf/config.properties
+## sshDataPath = /home/huberlin/gbv-daten/
+## updateIntervalInDays = 6
+## updates = data/gbv/updates/
+## initialDataFormat = mrc
+## updateFormat = mrc
+## updateIsRunning = 0
+## check = 1
+## lastUpdate = 2015-06-28T00:01:28Z
+## urlSolrCore = http://127.0.0.1:8983/solr/gbv
+## sshHost = gbv
+## initial = data/gbv/initialData/
+

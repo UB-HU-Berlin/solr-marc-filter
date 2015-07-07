@@ -1,0 +1,36 @@
+h1. ./etc/
+
+h2. config.ini
+
+Enthält alle wichtigen Konfigurationen für die jeweiligen Cores. Es müssen händisch folgende Einträge verändert werden:
+
+*coreunabhängige Einträge:*
+* *pathToFachkatalogGlobal* globaler Pfad zum Fachkatalog selbst
+* *pathIndexfile* globaler Pfad zum SolrMarc-Skript, was die einzelenen .mrc und .xml Dateien indizieren soll
+* *resultsMaxRecordsPerFile*
+** gibt an, wieviele Records maximal in einem exportierten .mrc File enthalten sein dürfen (damit die Datei nicht beliebig groß wird)
+** gibt es mehr Records, werden auch mehrere Ergebnis Dokumente angelegt
+* *resultsMaxNumber* 
+** wenn der Filter zu viele Ergebnisse ausgibt, kann dies durch diesen Parameter eingeschränkt werden (falls es Ergebnisse gibt, werden diese nicht in Dokumente geschrieben
+** falls der Parameter <= 0 gibt es keine Beschränkung für die maximale Ergebnisse und alle Records werden gespeichert
+
+*coreabhängige Einträge:*
+* *check* wenn der wert auf 0 gesetzt ist, wird dieser Core beim Update einfach übersprungen
+* weitere Parameter können, müssen aber nicht nachträglich weiter verändert werden
+
+
+h2. solrQuery.ini
+
+Diese Datei enthält die jeweiligen Filter, die händisch erstellt wurden. Ein Eintrag ergibt immer eine separate Ausgabedatei in ../results/ 
+Um die geschriebenen Filter auszuführen, muss einfach das Skript ../bin/getResults.sh ausgeführt werden. 
+Ein Filter ist dabei immer in der SolrQuery Syntax geschrieben, da diese per Get an die Schnittstelle geschickt wird. 
+
+Beispiel: 
+[Filter1]
+query=BCL_category:"17.28"
+
+h2. env
+
+Enthält die jeweiligen Umgebungsvariablen für die SSH Public-Private-Key Authentifizierung. Sollte die Prozess-ID des Ssh-Agent nicht mehr existieren, muss ein neuer über das Skript fachkatalog/bin/startSshAgent.sh gestartet werden.
+
+

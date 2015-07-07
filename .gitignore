@@ -4,15 +4,26 @@
 
 # runtime files
 /data/*
-!/data/README.textile
 
-/docu/tex/*
+/docu/*
+!/docu/fachkatalog-dokumentation.pdf
 
-/etc/
-!/etc/config.ini.plain
+/etc/*
+
+/lib/verbund-field-analyser
 
 /results/*
+
 /log/*
+
+# test files
+_test*
+test*.*
+
+# except online docu
+*.textile
+*.plain
+
 
 # OS generated files #
 ######################
@@ -24,3 +35,4 @@
 Icon?
 ehthumbs.db
 Thumbs.db
+*~
