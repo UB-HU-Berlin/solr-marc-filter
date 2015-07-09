@@ -86,7 +86,8 @@ done
 coreSpecificString=""
 NEWLINE=$'\n'
 case "$updateType" in
-"oai")	echo "Choose OAI specific: oldest possible update for this interface, format: yyyy-mm-dd"
+"oai")	
+	echo "Choose OAI specific: oldest possible update for this interface, format: yyyy-mm-dd"
 	read oaiOldestUpdate
 	
 	reDate="^[1-2][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]"
@@ -116,18 +117,24 @@ case "$updateType" in
 	coreSpecificString="$coreSpecificString${NEWLINE}oaiMaxDaysPerUpdatefile = $oaiMaxDaysPerUpdatefile"
 	;;
 
-"ssh")	echo "Choose SSH specific: ssh host"	
+"ssh")	
+	echo "Choose SSH specific: ssh host"	
 	read sshHost
 	coreSpecificString="sshHost = $sshHost"
 	
+	echo "Choose SSH specific: ssh user"	
+	read sshUser
+	coreSpecificString="sshUser = $sshUser"
+		
 	echo "Choose SSH specific: ssh path to data"    
-        read sshDataPath
-        coreSpecificString="$coreSpecificString${NEWLINE}sshDataPath = $sshDataPath"
+	read sshDataPath
+	coreSpecificString="$coreSpecificString${NEWLINE}sshDataPath = $sshDataPath"
 	;;
 
-"ftp")	echo "Choose FTP specific: url to data"
-        read ftpUrl
-        coreSpecificString="ftpUrl = $ftpUrl"
+"ftp")	
+	echo "Choose FTP specific: url to data"
+    read ftpUrl
+    coreSpecificString="ftpUrl = $ftpUrl"
 	;;
 
 *)	;;

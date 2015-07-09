@@ -29,6 +29,7 @@ resultType = mrc
 ## check = 1
 ## lastUpdate = 2015-06-28T00:01:28Z
 ## urlSolrCore = http://127.0.0.1:8983/solr/gbv
+## sshUser = user
 ## sshHost = gbv
 ## initial = data/gbv/initialData/
 

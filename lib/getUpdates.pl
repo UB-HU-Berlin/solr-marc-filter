@@ -147,7 +147,7 @@ sub getUpdates(@){
 			# get the updates and deletions via scp
 			my @allUpdateNames;	#TODO: rename to allUpdatesFiles
 			my $host = $configs->{$verbund}->{'sshHost'};
-			#TODO my $user = $configs->{$verbund}->{'sshUser'};
+			my $user = $configs->{$verbund}->{'sshUser'};
 			my $pathToSshData = $configs->{$verbund}->{'sshDataPath'};
 			my $newUpdatesFound = 0;
 			
@@ -170,9 +170,8 @@ sub getUpdates(@){
 			$ENV{"SSH_AUTH_SOCK"} = $SSH_AUTH_SOCK;
 			
 			my $cmd = "ls $pathToSshData";
-			#TODO: user must be seperated from code!
-			#sshopen2("$user\@"."$host", *READER, *WRITER, "$cmd") || die "ssh: $!";
-			sshopen2("huberlin\@"."$host", *READER, *WRITER, "$cmd") || die "ssh: $!";
+			sshopen2("$user\@"."$host", *READER, *WRITER, "$cmd") || die "ssh: $!";
+			
 			#TODO: make it independet from 'gbv'!
 			&logMessage("WARNING", "($verbund) all files in target sshDataPath will be added!") if not $verbund eq 'gbv';
 			
