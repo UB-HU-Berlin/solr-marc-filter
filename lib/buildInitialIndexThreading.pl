@@ -10,6 +10,9 @@ use Sys::Info;
 use FindBin;
 
 require "$FindBin::Bin/helper.pl";
+our $ini_pathToFachkatalogGlobal;
+our $ini_pathIndexfile;
+
 my @results = ();
 my $configs = Config::INI::Reader->read_file("$FindBin::Bin/../etc/config.ini");
 #my @verbuende = keys %$configs;
@@ -43,9 +46,10 @@ foreach my $thr(@threads){
 
 sub index(){
 	my $verbund = $_[0];
-	# get and check if the path is relative or global
+	
+	## get and check if the path is relative or global
 	my $dirInitial = $configs->{$verbund}->{'initial'};
-	$dirInitial = $configs->{'_'}->{'pathToFachkatalogGlobal'}.$dirInitial if($dirInitial =~ /^(?!\/).+/);
+	$dirInitial = $ini_pathToFachkatalogGlobal . $dirInitial if($dirInitial =~ our $re);
 	
 	opendir(DIR, $dirInitial) or die $!;
 	my @filesToIndex = ();
@@ -57,25 +61,24 @@ sub index(){
 		}
 	}
 	@filesToIndex = sort @filesToIndex;
-	&logMessage("INFO", "($verbund) Trying to push ". scalar(@filesToIndex) ." initial data files to index: @filesToIndex", 1);
-	my $indexFile = $configs->{'_'}->{pathIndexfile};
-	
+	&logMessage("INFO", "($verbund) Trying to push ". scalar(@filesToIndex) ." initial data files to index: @filesToIndex");
+		
 	my $configProperties = $configs->{$verbund}->{'configPropertiesFile'};
-	$configProperties = $configs->{'_'}->{'pathToFachkatalogGlobal'}.$configProperties if($configProperties =~ /^(?!\/).+/);
+	$configProperties = $ini_pathToFachkatalogGlobal . $configProperties if($configProperties =~ /^(?!\/).+/);
 			
-	my $logFilePath = $configs->{'_'}->{'pathToFachkatalogGlobal'} . "log/log_$verbund.txt";
+	my $logFilePath = $ini_pathToFachkatalogGlobal . "log/log_$verbund.txt";
 	system("touch $logFilePath");
 	
 	for my $fileToIndex(@filesToIndex){
-		&logMessage("INFO", "($verbund) pushing $fileToIndex to Solr index..", 1);
-		system("$indexFile $dirInitial$fileToIndex $configProperties 2>$logFilePath >/dev/null");
-		&logMessage("SYS", "($verbund) $indexFile $dirInitial$fileToIndex $configProperties 2>$logFilePath >/dev/null", 1); 
+		&logMessage("INFO", "($verbund) pushing $fileToIndex to Solr index..");
+		system("$ini_pathIndexfile $dirInitial$fileToIndex $configProperties 2>$logFilePath >/dev/null");
+		&logMessage("SYS", "($verbund) $ini_pathIndexfile $dirInitial$fileToIndex $configProperties 2>$logFilePath >/dev/null"); 
 		
 		if($? == -1){
-			&logMessage("ERROR", "failed to index file $fileToIndex with $configProperties for some reason!", 1);
+			&logMessage("ERROR", "failed to index file $fileToIndex with $configProperties for some reason!");
 		}
 		else{
-			&logMessage("INFO", "($verbund) finished pushing $fileToIndex to Solr index..", 1);
+			&logMessage("INFO", "($verbund) finished pushing $fileToIndex to Solr index..");
 		}
 	}
 	return 1;

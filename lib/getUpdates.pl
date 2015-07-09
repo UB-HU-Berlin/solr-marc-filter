@@ -16,31 +16,32 @@ use Net::SSH qw(sshopen3);
 use Text::Unidecode; # use this for wide character in print
 
 require "$FindBin::Bin/helper.pl";
+our $ini_pathToFachkatalogGlobal;
 
 sub getUpdates(@){
 	my $pathConfigIni = "$FindBin::Bin/../etc/config.ini";
 	my $configs = Config::INI::Reader->read_file($pathConfigIni);
 	my @verbuende = @_;
 	my @verbuendeWithNewUpdates;
-	my $pathToFachkatalogGlobal = $configs->{'_'}->{'pathToFachkatalogGlobal'};
-	my $updateFormat = $configs->{'_'}->{'updateFormat'};
-		
-	&logMessage("INFO", "Begin to look for updates .. in @verbuende", 1);
+			
+	&logMessage("INFO", "Begin to look for updates .. in @verbuende");
 	
 	foreach my $verbund(@verbuende){
 		# check if the path is relative or global
 		my $pathToUpdates = $configs->{$verbund}->{updates};
-		$pathToUpdates = "$pathToFachkatalogGlobal$pathToUpdates" if($pathToUpdates =~ /^(?!\/).+/);
+		$pathToUpdates = "$ini_pathToFachkatalogGlobal$pathToUpdates" if($pathToUpdates =~ /^(?!\/).+/);
+		
+		my $updateFormat = $configs->{$verbund}->{'updateFormat'};
 		my @lastUpdates;
 		my $inOut;
 		
 		if($configs->{$verbund}->{'check'} eq '0'){
-			&logMessage("WARNING", "($verbund) will not be checked for updates due to check=0!", 1);
+			&logMessage("WARNING", "($verbund) will not be checked for updates due to check=0!");
 			next;
 		}
 		
 		if($configs->{$verbund}->{'updateIsRunning'} eq '1'){
-			&logMessage("WARNING", "($verbund) update already in progress and locked by config.ini", 1);
+			&logMessage("WARNING", "($verbund) update already in progress and locked by config.ini");
 			next;
 		}
 		
@@ -49,7 +50,7 @@ sub getUpdates(@){
 			my $path = $configs->{$verbund}->{'updates'};
 			
 			# check if the path is relative or global
-			$path = "$pathToFachkatalogGlobal$path" if($path =~ /^(?!\/).+/);
+			$path = "$ini_pathToFachkatalogGlobal$path" if($path =~ /^(?!\/).+/);
 			
 			open($inOut, "< $path"."lastUpdates.txt") or die("ERROR: Could not open lastUpdates file of $verbund: $!, $path");
 			while(my $currLine = <$inOut>){
@@ -86,7 +87,7 @@ sub getUpdates(@){
 				}
 				else{
 					while($content =~ /.+\.tar\.gz/){
-						&logMessage("WARNING", "($verbund) all .tar.gz files in target updateURL will be added!", 1);
+						&logMessage("WARNING", "($verbund) all .tar.gz files in target updateURL will be added!");
 						push(@allUpdateNames, $1);
 					}
 				}
@@ -98,11 +99,11 @@ sub getUpdates(@){
 				my $now = &getTimeStr();
 				
 				if(@updates){
-					&logMessage("INFO", "($verbund) Found new Updates for $verbund: @updates", 1);
+					&logMessage("INFO", "($verbund) Found new Updates for $verbund: @updates");
 					push(@verbuendeWithNewUpdates, $verbund);
 				}
 				else{
-					&logMessage("INFO", "($verbund) is up to date ..", 1);
+					&logMessage("INFO", "($verbund) is up to date ..");
 					$configs->{$verbund}->{updateIsRunning} = 0;
 					Config::INI::Writer->write_file($configs, $pathConfigIni);
 					next;
@@ -111,19 +112,19 @@ sub getUpdates(@){
 				# now download the updates if they ain't in the lastUpdates file
 				foreach my $fileName(@updates){
 					my $latestUpdate = $fileName;
-					&logMessage("INFO", "($verbund) downloading $fileName ..", 1);
+					&logMessage("INFO", "($verbund) downloading $fileName ..");
 					getstore($updateURL.$fileName, $pathToUpdates.$fileName) or die "Could not download $fileName from $updateURL";
 					print $inOut "$fileName\n";
 				}
 				
 				# now extract all downloaded files and delete the .tgz afterwords
 				foreach my $fileName(@updates){
-					&logMessage("INFO", "($verbund) extracting $fileName .. ", 1);
+					&logMessage("INFO", "($verbund) extracting $fileName .. ");
 					$Archive::Extract::PREFER_BIN = 1;
 					my $ae = Archive::Extract->new( archive => "$pathToUpdates$fileName");
 					my $export = $ae->extract(to => "$pathToUpdates") or die $ae->error;
 					
-					&logMessage("INFO", "($verbund) removing downloaded archive $fileName ..", 1);
+					&logMessage("INFO", "($verbund) removing downloaded archive $fileName ..");
 					system("rm $pathToUpdates$fileName");
 					
 					# write date for the last correct update into ini file
@@ -132,7 +133,7 @@ sub getUpdates(@){
 				}
 			}
 			else{
-				&logMessage("ERROR", "($verbund) an error occured! " . $response->status_line, 1);
+				&logMessage("ERROR", "($verbund) an error occured! " . $response->status_line);
 			}
 			$configs->{$verbund}->{updateIsRunning} = 0;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
@@ -146,11 +147,12 @@ sub getUpdates(@){
 			# get the updates and deletions via scp
 			my @allUpdateNames;	#TODO: rename to allUpdatesFiles
 			my $host = $configs->{$verbund}->{'sshHost'};
+			#TODO my $user = $configs->{$verbund}->{'sshUser'};
 			my $pathToSshData = $configs->{$verbund}->{'sshDataPath'};
 			my $newUpdatesFound = 0;
 			
 			# read SSH Variables from fachkatalog/etc/env
-			open(my $FILE, "< $pathToFachkatalogGlobal"."etc/env" ) or die "Could not open File $!";
+			open(my $FILE, "< $ini_pathToFachkatalogGlobal"."etc/env" ) or die "Could not open File $!";
 			my ($SSH_AGENT_PID, $SSH_AUTH_SOCK);
 			
 			while(my $line = <$FILE>){
@@ -168,20 +170,24 @@ sub getUpdates(@){
 			$ENV{"SSH_AUTH_SOCK"} = $SSH_AUTH_SOCK;
 			
 			my $cmd = "ls $pathToSshData";
+			#TODO: user must be seperated from code!
+			#sshopen2("$user\@"."$host", *READER, *WRITER, "$cmd") || die "ssh: $!";
 			sshopen2("huberlin\@"."$host", *READER, *WRITER, "$cmd") || die "ssh: $!";
-			&logMessage("WARNING", "($verbund) all files in target sshDataPath will be added!", 1) if not $verbund eq 'gbv';
+			#TODO: make it independet from 'gbv'!
+			&logMessage("WARNING", "($verbund) all files in target sshDataPath will be added!") if not $verbund eq 'gbv';
 			
 			while (<READER>) {
 				chomp();
 				my $debug = $_;
 				
 				if($_ =~ /.*Datei oder Verzeichnis nicht gefunden/){
-					&logMessage("WARNING", "($verbund) path $pathToSshData could not be found!", 1);
+					&logMessage("WARNING", "($verbund) path $pathToSshData could not be found!");
 					&logMessage("WARNING", "($verbund) Skipping $verbund ..");
 					$configs->{$verbund}->{updateIsRunning} = 0;
 					Config::INI::Writer->write_file($configs, $pathConfigIni);
 					last;
 				}
+				#TODO: very specific for 'gbv' -> make more independent
 				if($verbund eq 'gbv'){
 					if($_ =~ /^gbv.+delete.+\.txt$/ or $_ =~ /^gbv.+update.+\.mrc\.tar\.gz$/){
 				    	push(@allUpdateNames, $_);
@@ -202,12 +208,12 @@ sub getUpdates(@){
 			my @updates = grep {not $lastUp{$_}} @allUpdateNames;
 			
 			if(@updates){
-				&logMessage("INFO", "($verbund) Found ". scalar(@updates) ." new Updates for $verbund: @updates", 1);
+				&logMessage("INFO", "($verbund) Found ". scalar(@updates) ." new Updates for $verbund: @updates");
 				push(@verbuendeWithNewUpdates, $verbund);
 				$newUpdatesFound = 1;
 			}
 			else{
-				&logMessage("INFO", "($verbund) is up to date ..", 1);
+				&logMessage("INFO", "($verbund) is up to date ..");
 				$configs->{$verbund}->{updateIsRunning} = 0;
 				Config::INI::Writer->write_file($configs, $pathConfigIni);
 				next;
@@ -219,7 +225,7 @@ sub getUpdates(@){
 			
 			foreach my $fileName(@updates){
 				my $latestUpdate = $fileName;
-				&logMessage("INFO", "($verbund) downloading $pathToSshData$fileName from $host ..", 1);
+				&logMessage("INFO", "($verbund) downloading $pathToSshData$fileName from $host ..");
 				$scp->cwd($pathToSshData);
 				$scp->get("$fileName", $pathToUpdates) or die $scp->{errstr};
 				print $inOut "$fileName\n";
@@ -229,12 +235,12 @@ sub getUpdates(@){
 			# now extract all downloaded files and delete the .tgz afterwords
 			foreach my $fileName(@updates){
 				if($fileName =~ /.+\.tar\.gz$/){
-					&logMessage("INFO", "($verbund) extracting $fileName .. ", 1);
+					&logMessage("INFO", "($verbund) extracting $fileName .. ");
 					$Archive::Extract::PREFER_BIN = 1;
 					my $ae = Archive::Extract->new( archive => "$pathToUpdates$fileName");
 					my $export = $ae->extract(to => $pathToUpdates) or die $ae->error, $pathToUpdates;
 					
-					&logMessage("INFO", "($verbund) removing downloaded archive $fileName ..", 1);
+					&logMessage("INFO", "($verbund) removing downloaded archive $fileName ..");
 					system("rm $pathToUpdates$fileName");
 				}
 			}
@@ -325,7 +331,7 @@ sub getUpdates(@){
 			
 			# check if the path is relative or global
 			my $path = $configs->{$verbund}->{'updates'};
-			$path = "$pathToFachkatalogGlobal$path" if($path =~ /^(?!\/).+/);
+			$path = "$ini_pathToFachkatalogGlobal$path" if($path =~ /^(?!\/).+/);
 			
 			my $now = &getTimeStr();
 			open(my $OUTupd, "> $path"."updates_$from"."_$until.xml") or die("($now) ERROR: ($verbund) Could not open $path"."updates_$from"."_$until.xml: $!\n");
@@ -422,7 +428,7 @@ sub getUpdates(@){
 	}
 	return @verbuendeWithNewUpdates;
 }
-#&getUpdates(("b3kat", "gbv", "swb")); #TODO: comment this line
+#&getUpdates(("b3kat", "gbv", "swb")); #just for testing
 
 1;
 

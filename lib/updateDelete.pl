@@ -9,19 +9,20 @@ use Apache::Solr;
 use FindBin;
 
 require "$FindBin::Bin/helper.pl";
+our $re;
+our $ini_pathToFachkatalogGlobal;
+our $ini_urlSolrDefault;
+our $ini_pathLogFileAlternative;
+our $ini_pathIndexfile;
 
 #TODO: script is very specific to verbund GBV - make more independent
-
-my $SAFE_IN_LOG = 1;
 
 sub updateDelete(@){
 	my $pathConfigIni = "$FindBin::Bin/../etc/config.ini";
 	my $configs = Config::INI::Reader->read_file($pathConfigIni);
 	#my @verbuende = keys %$configs;
 	my @verbuende = @_;
-	&logMessage("DEBUG", "verbuende: "."@verbuende", $SAFE_IN_LOG);
-	
-	my $pathToFachkatalogGlobal = $configs->{'_'}->{'pathToFachkatalogGlobal'};
+	&logMessage("DEBUG", "verbuende: "."@verbuende");
 	
 	foreach my $verbund(@verbuende){
 		my @deletions = ();
@@ -29,25 +30,24 @@ sub updateDelete(@){
 		if(not $verbund eq "_"){
 
 			if($configs->{$verbund}->{'check'} eq 0){
-				&logMessage("WARNING", "($verbund) update/delete will not be done due to check=0!", $SAFE_IN_LOG);
+				&logMessage("WARNING", "($verbund) update/delete will not be done due to check=0!");
 				next;
 			}
 			if($configs->{$verbund}->{'updateIsRunning'} eq '1'){
-				&logMessage("WARNING", "($verbund) can not update/delete - update already in progress and locked by config.ini", $SAFE_IN_LOG);
+				&logMessage("WARNING", "($verbund) can not update/delete - update already in progress and locked by config.ini");
 				next;
 			}
 		
 			$configs->{$verbund}->{updateIsRunning} = 1;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
 			
-			my $url = $configs->{'_'}->{'urlSolrDefault'}."$verbund";
-			my $solr = Apache::Solr->new(server => $url);
+			my $solr = Apache::Solr->new(server => $ini_urlSolrDefault);
 			
-			&logMessage("INFO", "Applying updates to $verbund ..", $SAFE_IN_LOG);
+			&logMessage("INFO", "Applying updates to $verbund ..");
 			
 			# get and check if the path is relative or global
 			my $dirDel = $configs->{$verbund}->{'updates'};
-			$dirDel = $configs->{'_'}->{'pathToFachkatalogGlobal'}.$dirDel if($dirDel =~ /^(?!\/).+/);
+			$dirDel = $ini_pathToFachkatalogGlobal . $dirDel if($dirDel =~ $re);
 			
 			opendir(DIR_DEL, $dirDel) or die $!;
 			my @filesWithIDs = ();
@@ -60,7 +60,7 @@ sub updateDelete(@){
 				}
 				elsif ($file =~ m/(.*del.+)\.\w{3}$/){
 					system("mv \"$dirDel/$file\" \"$dirDel/$1.del\"");
-					&logMessage("DEBUG", "mv $file $1.del", $SAFE_IN_LOG);
+					&logMessage("DEBUG", "mv $file $1.del");
 					push(@filesWithIDs, "$1.del");
 				}
 			}
@@ -70,7 +70,7 @@ sub updateDelete(@){
 			
 			# get and check if the path is relative or global
 			my $dirUpd = $configs->{$verbund}->{'updates'};
-			$dirUpd = $configs->{'_'}->{'pathToFachkatalogGlobal'}.$dirUpd if($dirUpd =~ /^(?!\/).+/);
+			$dirUpd = $ini_pathToFachkatalogGlobal . $dirUpd if($dirUpd =~ $re);
 			
 			opendir(DIR_UPD, $dirUpd) or die $!;
 			my @filesWithUpd = ();
@@ -82,21 +82,15 @@ sub updateDelete(@){
 			}
 			@filesWithUpd = sort @filesWithUpd;
 			
-			# get and check if all the given pathes are relative or global
-			my $indexFile = $configs->{'_'}->{pathIndexfile};
-			$indexFile = $pathToFachkatalogGlobal . $indexFile if($indexFile =~ /^(?!\/).+/);
-			
-			my $logFile = $configs->{'_'}->{pathLogFileAlternative};
-			$logFile = $pathToFachkatalogGlobal . $logFile if($logFile =~ /^(?!\/).+/);
-			open(my $alternLOG, ">> $logFile") or die $!;
+			open(my $alternLOG, ">> $ini_pathLogFileAlternative") or die $!;
 			print $alternLOG "\n\n". &getTimeStr() . " ($verbund): \n";
 			
 			my $configProperties = $configs->{$verbund}->{configPropertiesFile};
-			$configProperties = $pathToFachkatalogGlobal . $configProperties if($configProperties =~ /^(?!\/).+/);
+			$configProperties = $ini_pathToFachkatalogGlobal . $configProperties if($configProperties =~ /^(?!\/).+/);
 			
 			my @ids = ();
 			
-			#TODO: code (til line 151) not tested yet with more than one update and delete file
+			#TODO: pairwise deletions (til line 151) not tested yet with more than one update and delete file
 			# prepare list for pairwise deletions
 			my $dateFormat = '\d\d\d\d-\d\d-\d\d';
 			my $dateLength = length("YYYY-MM-DD");
@@ -116,39 +110,38 @@ sub updateDelete(@){
 				
 				substr($a, $positionFromA, $dateLength) cmp substr($b, $positionFromB, $dateLength)  
 			} @mixedList;
-			
 						
 			for my $updateOrDeletion(@mixedListSorted){
 
 				# apply deletions and move the deletions afterwords to applied
 				if($updateOrDeletion =~ /delete/){
 
-					&logMessage("INFO", "($verbund) Applying deletions from file $updateOrDeletion to solr index ..", $SAFE_IN_LOG);
-					&logMessage("SYS", "($verbund) echo -e '\x04' | $indexFile $dirDel$updateOrDeletion $configProperties 2 > $logFile >/dev/null", $SAFE_IN_LOG);
-					system("echo -e '\x04' | $indexFile $dirDel$updateOrDeletion $configProperties 2 > $logFile >/dev/null");
+					&logMessage("INFO", "($verbund) Applying deletions from file $updateOrDeletion to solr index ..");
+					&logMessage("SYS", "($verbund) echo -e '\x04' | $ini_pathIndexfile $dirDel$updateOrDeletion $configProperties 2 > $ini_pathLogFileAlternative >/dev/null");
+					system("echo -e '\x04' | $ini_pathIndexfile $dirDel$updateOrDeletion $configProperties 2 > $ini_pathLogFileAlternative >/dev/null");
 						
 					# echo -e '\x04' | .. 
 					# 	this sends an end of transmission control char 
 					#	prevents the $indexFile to read data from stdin (maybe better solution)
 						
-					&logMessage("INFO", "($verbund) moving file $dirDel$updateOrDeletion to ./applied/", $SAFE_IN_LOG);
+					&logMessage("INFO", "($verbund) moving file $dirDel$updateOrDeletion to ./applied/");
 					system("mv $dirDel$updateOrDeletion $dirDel"."applied/");
-					&logMessage("INFO", "($verbund) update $updateOrDeletion applied ..", $SAFE_IN_LOG);
+					&logMessage("INFO", "($verbund) update $updateOrDeletion applied ..");
 				}
 				
 				# apply updates and move the updates afterwords to applied
 				elsif($updateOrDeletion =~ /update/){
-					&logMessage("INFO", "($verbund) Applying updates from file $updateOrDeletion to solr index ..", $SAFE_IN_LOG);
-					&logMessage("SYS", "($verbund) $indexFile $dirUpd$updateOrDeletion $configProperties 2>>$logFile >/dev/null", $SAFE_IN_LOG);
+					&logMessage("INFO", "($verbund) Applying updates from file $updateOrDeletion to solr index ..");
+					&logMessage("SYS", "($verbund) $ini_pathIndexfile $dirUpd$updateOrDeletion $configProperties 2>>$ini_pathLogFileAlternative >/dev/null");
 							
-					system("$indexFile $dirUpd$updateOrDeletion $configProperties 2>>$logFile >/dev/null");
-					&logMessage("INFO", "($verbund) moving update file $dirUpd$updateOrDeletion to ./applied/", $SAFE_IN_LOG);
+					system("$ini_pathIndexfile $dirUpd$updateOrDeletion $configProperties 2>>$ini_pathLogFileAlternative >/dev/null");
+					&logMessage("INFO", "($verbund) moving update file $dirUpd$updateOrDeletion to ./applied/");
 					system("mv $dirUpd$updateOrDeletion $dirUpd"."applied/");
-					&logMessage("INFO", "($verbund) update $updateOrDeletion applied ..", $SAFE_IN_LOG);
+					&logMessage("INFO", "($verbund) update $updateOrDeletion applied ..");
 				}
 				
 				else{
-					&logMessage("WARNING", "($verbund) ignore File ($updateOrDeletion) for update!", $SAFE_IN_LOG);
+					&logMessage("WARNING", "($verbund) ignore File ($updateOrDeletion) for update!");
 				}
 			}
 			

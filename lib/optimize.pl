@@ -9,27 +9,26 @@ use FindBin;
 use Text::Unidecode; # use this for wide character in print
 
 require "$FindBin::Bin/helper.pl";
-my $SAFE_IN_LOG = 1;
+our $ini_pathToSolrCoresDefault;
+our $ini_urlSolrDefault;
 
 sub optimize(@){
 	my $pathConfigIni = "$FindBin::Bin/../etc/config.ini";
 	my $configs = Config::INI::Reader->read_file($pathConfigIni);
 	my @verbuende = @_;
-	my $pathToFachkatalogGlobal = $configs->{'_'}->{'pathToFachkatalogGlobal'};
-	
+		
 	## check if there is enough free space (solr itself will not check that!)
 	foreach my $verbund(@verbuende){
 		
-		&logMessage("INFO", "Try optimizing core $verbund", $SAFE_IN_LOG);
+		&logMessage("INFO", "Try optimizing core $verbund");
 		
-		my $pathSolrconfig = $configs->{'_'}->{'pathToSolrCoresDefault'} . "$verbund/conf/solrconfig.xml";
-		my $solrDataDir = `cat $pathSolrconfig | grep dataDir`;
+		my $solrDataDir = `cat $ini_pathToSolrCoresDefault | grep dataDir`;
 		($solrDataDir) = $solrDataDir =~ /<dataDir>(.+)<\/dataDir>/;
 		
 		## check if data dir is set global or the default data dir
 		# default
 		if($solrDataDir =~ /\${solr\.data\.dir:}/){
-			$solrDataDir = $configs->{'_'}->{'pathToSolrCoresDefault'} . "$verbund/data/index";
+			$solrDataDir = $ini_pathToSolrCoresDefault . "$verbund/data/index";
 		}
 		# global
 		else{
@@ -47,25 +46,24 @@ sub optimize(@){
 		## check if enough space left
 		my $needed = 2 * $spaceDataUsed;
 		if($spaceGlobalLeft > $needed){
-			&logMessage("INFO", "Enough space to optimize $verbund (Needed: $needed MB, Available: $spaceGlobalLeft MB)", $SAFE_IN_LOG);
+			&logMessage("INFO", "Enough space to optimize $verbund (Needed: $needed MB, Available: $spaceGlobalLeft MB)");
 			
 			# TODO: check when optimizing is over
 			# lock current core -> updateIsRunning
 			$configs->{$verbund}->{updateIsRunning} = 1;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
 			
-			my $urlSolrDefault = $configs->{'_'}->{'urlSolrDefault'};
-			my $response = `curl $urlSolrDefault$verbund/update?optimize=true&maxSegments=10&waitFlush=true`;
+			my $response = `curl $ini_urlSolrDefault$verbund/update?optimize=true&maxSegments=10&waitFlush=true`;
 			
 			$configs->{$verbund}->{updateIsRunning} = 0;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
 			
-			&logMessage("INFO", "Verbund $verbund optimized!", $SAFE_IN_LOG);
+			&logMessage("INFO", "Verbund $verbund optimized!");
 		}
 		else{
-			&logMessage("WARNING", "Not enough space to optimize $verbund (Needed: $needed MB, Available: $spaceGlobalLeft MB)", $SAFE_IN_LOG);
+			&logMessage("WARNING", "Not enough space to optimize $verbund (Needed: $needed MB, Available: $spaceGlobalLeft MB)");
 		}
 	}
 }
-#&optimize("b3kat"); 	#TODO: just for testing! comment this line
+#&optimize("b3kat"); 	#just for testing! comment this line
 1;

@@ -11,13 +11,16 @@ use FindBin;
 #use JSON::Parse 'parse_json';
 
 require "$FindBin::Bin/helper.pl";
+our $ini_pathResults;
+our $ini_resultType;
+our $ini_resultsMaxNumber;
+our $ini_resultsMaxRecordsPerFile;
+our $ini_responseTimeout;
+our $ini_pathQuery;
 
 my $configs = Config::INI::Reader->read_file("$FindBin::Bin/../etc/config.ini");
-my $responseTimeout = $configs->{'_'}->{serverResponseTimeoutSec};
-my $pathToFachkatalogGlobal = $configs->{'_'}->{pathToFachkatalogGlobal};
-my $pathQuery = $configs->{'_'}->{pathQuery};
-$pathQuery = $pathToFachkatalogGlobal . $pathQuery if($pathQuery =~ /^(?!\/).+/);
-my $queries = Config::INI::Reader->read_file($pathQuery);
+
+my $queries = Config::INI::Reader->read_file($ini_pathQuery);
 my $offset = $ARGV[0];
 $offset = 0 unless $offset;
 
@@ -29,11 +32,8 @@ foreach my $request(@queries){
 	$query = "" unless $query;
 	my @verbuendeToSearch = split(",", $queries->{$request}->{'verbund'}) if $queries->{$request}->{'verbund'};
 		
-	&logMessage("WARNING", "no query in $request found .. skipping!", 1) unless $query;
+	&logMessage("WARNING", "no query in $request found .. skipping!") unless $query;
 	next unless $query;
-	
-	my $type = $configs->{'_'}->{'resultType'};
-	my $resultsMaxRecordsPerFile = $configs->{'_'}->{'resultsMaxRecordsPerFile'};
 	
 	my $dateTime = &getTimeStr();
 	
@@ -57,14 +57,10 @@ foreach my $request(@queries){
 		$url.="&shards.info=true";	# to get special information about different shards
 		$url.="&fl=marc_display";	# to get only the field marc_display, because other information is not needed
 		
-		# get and check if the path is relative or global
-		my $pathResults = $configs->{'_'}->{'pathResults'};
-		$pathResults = $configs->{'_'}->{'pathToFachkatalogGlobal'}.$pathResults if($pathResults =~ /^(?!\/).+/);
-		
-		open(my $output, "> $pathResults"."$request"."_$dateTime"."_$verbund.$type") or die("ERROR: Could not create output file: $!");
+		open(my $output, "> $ini_pathResults"."$request"."_$dateTime"."_$verbund.$ini_resultType") or die("ERROR: Could not create output file: $!");
 		binmode $output, ":utf8";
 		
-		open(my $outputQuery, "> $pathResults"."$request"."_$dateTime"."_$verbund"."_query.txt") or die("ERROR: Could not create output file: $!");
+		open(my $outputQuery, "> $ini_pathResults"."$request"."_$dateTime"."_$verbund"."_query.txt") or die("ERROR: Could not create output file: $!");
 		binmode $outputQuery, ":utf8";
 		
 		print $outputQuery "Query=$query\n\n";
@@ -72,12 +68,12 @@ foreach my $request(@queries){
 		close($outputQuery);
 		
 		my $ua = LWP::UserAgent->new;
-		$ua->timeout($responseTimeout);
+		$ua->timeout($ini_responseTimeout);
 		my $content = $ua->get($url."&rows=$rows&start=$start");
-		&logMessage("DEBUG", $url."&rows=$rows&start=$start", 1);
+		&logMessage("DEBUG", $url."&rows=$rows&start=$start");
 		
 		if($content->is_success){
-			&logMessage("ERROR", "Query $request was possible invalid", 1) if not $content;
+			&logMessage("ERROR", "Query $request was possible invalid") if not $content;
 			next if not $content;
 			
 			#TODO: use json
@@ -88,7 +84,7 @@ foreach my $request(@queries){
 			my $resultNumber = $xmlRef->{'result'}->{'numFound'};
 			$resultNumber = 0 unless $resultNumber;
 			
-			&logMessage("INFO", "found $resultNumber record(s) for search-term q=$query", 1);
+			&logMessage("INFO", "found $resultNumber record(s) for search-term q=$query");
 				
 #			foreach my $shardsInfo(%{$xmlRef->{'lst'}->{'shards.info'}->{'lst'}}){
 #				my $shardNumFound = $xmlRef->{'lst'}->{'shards.info'}->{'lst'}->{$shardsInfo}->{'long'}->{'numFound'}->{'content'};
@@ -97,12 +93,11 @@ foreach my $request(@queries){
 #				&logMessage("INFO", "\t $shardNumFound record(s) from $shardsInfo", 1) if not ref $shardsInfo eq ref {};
 #			}
 			
-			my $resultsMaxNumber = $configs->{'_'}->{'resultsMaxNumber'};
-			if($resultsMaxNumber > 0 and $resultNumber > $resultsMaxNumber){
-				&logMessage("ERROR", "found more results than allowed (increase resultsMaxNumber in config.ini to continue or use other search query)!", 1);
+			if($ini_resultsMaxNumber > 0 and $resultNumber > $ini_resultsMaxNumber){
+				&logMessage("ERROR", "found more results than allowed (increase resultsMaxNumber in config.ini to continue or use other search query)!");
 				next;
 			}
-			&logMessage("INFO", "Writing result records into file(s)", 1);
+			&logMessage("INFO", "Writing result records into file(s)");
 			
 			# number of update files
 			my $n = 0;
@@ -130,17 +125,17 @@ foreach my $request(@queries){
 							$mrcPlain =~ s/#31;/$r3/eg;
 							
 							# build new file if the max records per file is reached
-							if($i % $resultsMaxRecordsPerFile == 0 and $i != 0){
+							if($i % $ini_resultsMaxRecordsPerFile == 0 and $i != 0){
 								$n++;
 								close($output);
-								open($output, "> $pathResults"."$request"."_$dateTime"."_$verbund"."_$n.$type") or die("ERROR: Could not create output file: $!");
+								open($output, "> $ini_pathResults"."$request"."_$dateTime"."_$verbund"."_$n.$ini_resultType") or die("ERROR: Could not create output file: $!");
 								binmode $output, ":utf8";
 							}
 							print $output $mrcPlain;
 						}
 						else{
 							# should not happen!
-							&logMessage("DEBUG", "Record $i has no marc_display entry!", 1);
+							&logMessage("DEBUG", "Record $i has no marc_display entry!");
 						}
 						$i++;
 					}
@@ -163,23 +158,23 @@ foreach my $request(@queries){
 							$mrcPlain =~ s/#31;/$r3/eg;
 							
 							# build new file if the max records per file is reached
-							if($i % $resultsMaxRecordsPerFile == 0 and $i != 0){
+							if($i % $ini_resultsMaxRecordsPerFile == 0 and $i != 0){
 								$n++;
-								open($output, "> $pathResults"."$request"."_$dateTime"."_$verbund"."_$n.$type") or die("ERROR: Could not create output file: $!");
+								open($output, "> $ini_pathResults"."$request"."_$dateTime"."_$verbund"."_$n.$ini_resultType") or die("ERROR: Could not create output file: $!");
 								binmode $output, ":utf8";
 							}
 							print $output $mrcPlain;
 						}
 						else{
 							# should not happen!
-							&logMessage("DEBUG", "Record $i has no marc_display entry!", 1);
+							&logMessage("DEBUG", "Record $i has no marc_display entry!");
 						}
 						$i++;
 					}
 				}
 				else{
 					# just to avoid endless loop
-					&logMessage("DEBUG", "Else case that should not happen at record $i !", 1);
+					&logMessage("DEBUG", "Else case that should not happen at record $i !");
 					$i++;
 				}
 				
@@ -187,17 +182,17 @@ foreach my $request(@queries){
 				if($i % $rows == 0 and $i != 0){
 					$start = $i + $offset;
 					$content = $ua->get($url."&rows=$rows&start=$start");
-					&logMessage("DEBUG", $url."&rows=$rows&start=$start", 1);
+					&logMessage("DEBUG", $url."&rows=$rows&start=$start");
 					$xmlRef = XMLin($content->{_content});
 				}
 			}
 			close($output);
-			&logMessage("INFO", "wrote results into .mrc file(s)!", 1);
-			# just to get shure that the results will not be overwritten
+			&logMessage("INFO", "wrote results to $ini_pathResults");
+			# just to get shure that the results will not be overwritten - sleep one second
 			sleep(1);
 		}
 		else{
-			&logMessage("ERROR", $content->status_line, 1);
+			&logMessage("ERROR", $content->status_line);
 			next;
 		}
 	}

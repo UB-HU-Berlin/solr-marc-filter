@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 
 ## main task of this script: check if time has come for new updates
-## used scripts: getUpdates.pl, updateDelete.pl, optimize.pl
 
 use warnings;
 use strict;
