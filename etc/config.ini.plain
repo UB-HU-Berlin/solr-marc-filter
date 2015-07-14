@@ -15,7 +15,7 @@ serverResponseTimeoutSec = 1800
 pathResults = results/
 resultType = mrc
 
-## after creating a core there will be cores under this section e.g.
+## after creating a core with ./createCore.sh there will be cores under this section e.g.
 ## [gbv]
 ## updateType = ssh
 ## indexPropertiesFile = data/gbv/conf/index.properties

@@ -1,0 +1,9 @@
+solrmarc.solr.war.path = /home/user/solr/solr-4.8.1/example/solr-webapp/webapp/WEB-INF/lib 
+solr.path = REMOTE 
+solr.hosturl = http://127.0.0.1:8983/solr/b3kat 
+solr.data.dir = /home/user/solr/solr-4.8.1/example/solr/coreX/data 
+solr.core.name = coreX
+marc.to_utf_8 = false 
+marc.permissive = true 
+marc.default_encoding = MARC8 
+marc.include_errors = false

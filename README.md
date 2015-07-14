@@ -4,6 +4,9 @@ Indizierung von MARC21-Daten und anschließende Filterung nach Kriterium zur Gen
 
 Dies ist ein Projekt der Universitätsbibliothek der Humboldt-Universität zu Berlin, welches im Rahmen der Fachinfomationsdienste (FID)gestarter wurde. Hiermit sollen möglichst alle deutschen Verbunddaten indizier- und damit durchsuchbar gemacht werden, um darüber spezifische Fachausschnitte für ein jeweiliges FID zu generieren.
 
+## Dokumentation
+[fachkatalog-dokumentation.pdf](https://github.com/UB-HU-Berlin/solr-marc-filter/blob/master/docu/fachkatalog-dokumentation.pdf) enthält detaillierte Beispiele und Informationen, sowie ein Workaround zum Einrichten des Projekts
+
 ## Abhängigkeiten
 
 Diese Projekt benötigt bzw. ist abhängig von folgenden Komponenten (getestet)
@@ -36,6 +39,8 @@ Diese Projekt benötigt bzw. ist abhängig von folgenden Komponenten (getestet)
     - enthält auführbare Bash-Skripte, die von Kommandozeile gerufen werden können
 - __./data/__ 
     - enthält alle Cores (Verbünde), die in der Solr Instanz angezeigt, verwaltet und geupdatet werden
+- __./docu/__
+    - enthält die Dokumentation des Projekts als pdf mit detaillierten Erklärungen und den entsprechenden LaTex Resourcen
 - __/etc/__ 
     - enthält wichtige Dateien wie die Konfigurationen der jeweiligen Cores und eine Datei mit der die jeweiligen Filter geschrieben werden können
 - __./lib/__

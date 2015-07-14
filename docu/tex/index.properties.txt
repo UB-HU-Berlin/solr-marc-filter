@@ -1,0 +1,8 @@
+id = 001, first
+publishDate = 362a
+keywords = script(topicFacet.bsh), getKeywords("s")
+BCL_category = script(getCategory.bsh), getCertainCategoryNr("bcl")
+SDNB_category = script(getCategory.bsh), getCertainCategoryNr("sdnb")
+SSGN_category = script(getCategory.bsh), getCertainCategoryNr("ssgn")
+RVK_category = script(getCategory.bsh), getCertainCategoryNr("rvk")
+verbund = script(getCategory.bsh), writeFixName("GBV")

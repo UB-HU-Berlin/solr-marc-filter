@@ -6,7 +6,7 @@ use strict;
 use Config::INI::Reader;
 use Config::INI::Writer;
 use FindBin;
-use Text::Unidecode; # use this for wide character in print
+use Text::Unidecode; # use this to stop wide character in print message
 
 require "$FindBin::Bin/helper.pl";
 our $ini_pathToSolrCoresDefault;
@@ -16,13 +16,14 @@ sub optimize(@){
 	my $pathConfigIni = "$FindBin::Bin/../etc/config.ini";
 	my $configs = Config::INI::Reader->read_file($pathConfigIni);
 	my @verbuende = @_;
-		
+	
 	## check if there is enough free space (solr itself will not check that!)
 	foreach my $verbund(@verbuende){
 		
 		&logMessage("INFO", "Try optimizing core $verbund");
 		
-		my $solrDataDir = `cat $ini_pathToSolrCoresDefault | grep dataDir`;
+		my $pathSolrconfig = $ini_pathToSolrCoresDefault . "$verbund/conf/solrconfig.xml";
+		my $solrDataDir = `cat $pathSolrconfig | grep dataDir`;
 		($solrDataDir) = $solrDataDir =~ /<dataDir>(.+)<\/dataDir>/;
 		
 		## check if data dir is set global or the default data dir
@@ -35,16 +36,22 @@ sub optimize(@){
 			$solrDataDir .= "/index";
 		}
 		
-		# space used
+		# space used (MB)
 		my $spaceDataUsed = `du -m $solrDataDir`;
 		($spaceDataUsed) = $spaceDataUsed =~ /^(\d+)\s/;
 		
-		# global space left
+		# global space left (MB)
 		my $spaceGlobalLeft = `df -m $solrDataDir`;
 		($spaceGlobalLeft) = $spaceGlobalLeft =~ /\s+\d+\s+\d+\s+(\d+)\s+\d{1,3}%/;
 		
 		## check if enough space left
 		my $needed = 2 * $spaceDataUsed;
+		
+		if(not defined $spaceGlobalLeft){
+			&logMessage("ERROR", "($verbund) Can not figure out disk space") unless $spaceGlobalLeft;
+			next;
+		}
+		
 		if($spaceGlobalLeft > $needed){
 			&logMessage("INFO", "Enough space to optimize $verbund (Needed: $needed MB, Available: $spaceGlobalLeft MB)");
 			
@@ -65,5 +72,5 @@ sub optimize(@){
 		}
 	}
 }
-#&optimize("b3kat"); 	#just for testing! comment this line
+#&optimize("gbv"); 	#just for testing! comment this line
 1;

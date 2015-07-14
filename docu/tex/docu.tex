@@ -1,0 +1,770 @@
+%Vermittlung von Medienkompetenz in der Grundschule
+% !TEX program = pdfLaTeX
+
+\documentclass[10pt]{article}
+\usepackage[ngerman]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,
+left=2.5cm, right=2.5cm,
+top=2.5cm, bottom=2.5cm]{geometry}
+
+\usepackage{pdfpages}
+
+%Grafik einbinden
+\usepackage{graphicx}
+
+%Bildunterschrift kleiner
+\usepackage[font=footnotesize]{caption}
+
+%durchstreichen
+\usepackage[normalem]{ulem}
+\usepackage{cancel}
+
+%URL
+\usepackage[hyphens]{url}
+\usepackage{hyperref}
+
+% table
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{multirow}
+
+% textbox
+\usepackage{listings}
+
+% Querformat nutzen
+\usepackage{lscape}
+
+% Fuer Autoren mit newline
+\usepackage{authblk}
+
+%Literaturverzeichnis
+%\usepackage{bibgerm}
+\usepackage{apacite}
+%Doppelter Zeilenabstand
+\renewcommand{\baselinestretch}{1.50}\normalsize
+
+\usepackage{alltt}
+
+%Silbentrennung
+\finalhyphendemerits=10000
+\widowpenalty = 10000 %anti hurenkinder
+\displaywidowpenalty = 10000 %hurenkinder formel
+\brokenpenalty=1000	%Trennung am Ende einer Seite
+
+%Uebersatz vermeiden
+\tolerance=1500
+\emergencystretch=10pt
+
+%optischer Randausgleich
+\usepackage{microtype}
+
+%Aufzählung kompakt
+\usepackage{paralist}
+
+%einrückungen, und aligns
+\usepackage{amsmath}
+
+%Fussnoten
+\usepackage[bottom]{footmisc}
+\renewcommand{\footnoterule}{\rule{160mm}{0.1mm}{\vspace*{+0.3mm}}}
+\setlength{\footnotesep}{0.5cm}
+\setlength{\skip\footins}{0.1cm}
+
+% Absatzeinruecken
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{0.2cm}
+
+%Einfacher Zeilenabstand beim Inhaltsverz
+\usepackage{setspace}
+
+%Itemize kompakt
+\usepackage{mdwlist}
+%---------------------------------------------------------------------%
+
+
+\begin{document}
+\pagenumbering{gobble}
+%Titelseite HU Informatik
+\title{
+\begin{center}\includegraphics*[width=15cm]{hukombi-eps-converted-to.pdf} \end{center}
+%Universitätsbibliothek\\
+\vspace{2cm}
+Filter für Titeldaten \\
+- Dokumentation - \\
+\vspace{1.5cm}
+\begin{normalsize}
+Ein Projekt der Universitätsbibliothek \\
+der Humboldt-Universität zu Berlin
+\end{normalsize}
+\vspace{2cm}
+}
+
+\author{\textbf{Entwicklung \& Konzeption:} \\
+	Dr. Michael Voß, \\
+	Heiko Miersch, \\
+	Lorenz Fichte} 
+\date{\textbf{Stand}: \today \\
+\vspace{1cm}
+\textbf{Version}: 1.0b \\
+\vspace{1cm}
+}
+
+\maketitle
+%\thispagestyle{empty}
+\newpage
+\pagenumbering{arabic}
+
+% % % % % % % % % % % % % % Inhaltsverzeichnis
+\begin{spacing}{1.0}
+\tableofcontents
+\thispagestyle{empty}
+\end{spacing}
+\newpage
+
+
+\setcounter{page}{1}
+\newpage
+
+% % % % % % % % % % % % % % Zielstellung
+\section{Zielstellung}
+Im Zuge der Umstellung der Sondersammelgebiete in FIDs, sollte die Möglichkeit geschaffen werden, nationale Fachausschnitte für diese zu generieren. Hierfür sollten die Titeldaten der deutschen Bibliotheks-Verbünde nach vorgegebenen Kriterien durchsucht und die Ergebnismenge in einem einheitlichen Format für den Import in Discovery-Systeme bereitgestellt werden. Zusätzlich sollten die Aktualisierungen der Stammdaten, welche über diverse Schnittstellen bereitgestellt werden, bei der Filterung berücksichtigt werden. \\
+Die Definition von Filtern sollte möglichst einfach gestaltet werden und möglichst viele Freiheiten lassen. Hierbei sollte vorrangig auf die klassifikatorische Sacherschließung und die Erfassung gesamter Bibliotheksbestände, bspw. von Spezial-Bibliotheken, Wert gelegt werden. Ebenso sollte eine Bereichssuche über bestimmte Gruppen von Klassifikationen möglich sein. \\
+Um die Nachnutzung der Anwendung zu gewährleisten, sollen die verwendeten Bestandteile unter möglichst vielen Betriebssystemen lauffähig sein.
+
+% % % % % % % % % % % % % % Umsetzung
+\newpage
+\section{Umsetzung}
+Um die zuvor genannten Ziele zu erreichen und um das System flexibel zu halten, wurde sich für einen Verbund von mehreren Software-Komponenten entschieden. Diese wären folgende:
+\begin{itemize}
+	\item Apache Solr ... Bereitstellung eines Indizes für die Filterung
+	\item SolrMarc ... Indizierung von Marc-Daten nach Apache Solr
+	\item Perl-Skripte ... Steuerung der Indizierungs, Update und Filter-Prozesse 
+	\item Kommandozeilen-Skripte ... Administrative Aufgaben und Basis-Konfigurationen
+\end{itemize}
+
+Mit dem aktuellen Stand dieser Suite ist es möglich, sowohl MARC- als auch MARC-XML-Daten in eine Apache Solr Index zu übertragen und diesen für die Filterung der Daten zu benutzen. Als Abfragesprache, in welcher die Filter definiert werden, wird die Solr-Query-Syntax\footnote{siehe \url{https://cwiki.apache.org/confluence/display/solr/The+Standard+Query+Parser} bzw. \url{http://wiki.apache.org/solr/SolrQuerySyntax}} verwendet, welche der Lucene-Syntax\footnote{\url{http://lucene.apache.org/core/2_9_4/queryparsersyntax.html}} ähnlich ist. Diese Filter wie auch die Konfiguration von Pfaden usw. wird über Konfigurationsdateien erledigt. \\
+Die Indizierung der Basis-Daten eines jeden Verbundes bzw. einer jeden Datenquelle erfolgt in einem eigenen Solr-Core. Dies bietet den Vorteil, spezifische Anpassungen beim Indizieren vornehmen zu können oder auch nur eine bestimmte Quelle abzufragen ohne den kompletten Index zu durchsuchen. \\
+Für Updates und Löschungen von Titeldaten können OAI-Schnittstellen abgefragt oder Dateien via SSH bezogen werden. Dies kann automatisch erfolgen und wird über einen Scheduler gesteuert, welcher nur zyklisch getriggert werden muss. \\
+Die verwendeten Bestandteile wurden so gewählt, dass eine Portierung nach MS Windows ebenfalls möglich ist. Allerdings sind bei einer Portierung das Handling von Pfadeangaben und in Skripten genutzte Konsolen-Programme zu prüfen.
+
+\newpage
+% % % % % % % % % % % % % % Beschreibung des Systems
+\section{Beschreibung des Systems}
+\subsection{Komponenten}
+\subsubsection{Apache Solr}
+Solr dient im Projekt als Index auf welchem die Suche vollzogen wird. Da der Index die kompletten MARC-Datensätze enthält, liefert jedes Suchergebnis die entsprechenden Titeldaten mit. Um allerdings die Größe des Indizes nicht zu extrem anwachsen zu lassen, werden nur die Titeldaten gespeichert und die übrigen Suchfelder indiziert. Hierdurch wird der Overhead im Vergleich zu den reinen MARC-Daten minimiert. \\
+Wie bereits erwähnt, erhält jede Datenquelle ihren eigenen Solr-Core, welche aber immer das gleiche Schema verwendet. Lediglich Anpassungen an die Verknüpfungen der MARC-Felder auf Solr-Felder können und sollten hier stattfinden. Dies kann innerhalb der SolrMarc-Konfiguration geschehen.
+
+\subsubsection{Solr Marc}
+Die Indizierung der MARC-Daten erfolgt über die Java-Bibliothek SolrMarc. Diese wurde mit BeanShell-Skripten erweitert um MARC-Feldinhalte bspw. zu verketten. Die eingesetzte Solr-Marc-Version ist eine selbst-kompiliere Version, da die bereitgestellten Distributionen neuere Features noch nicht implementierten. \\
+Da alle versuchten SolrMarc-Versionen nicht mit aktuellen Apache Solr Versionen kompatibel sind, erfolgt die Indizierung nur über die REST-Schnittstelle von Solr. Sollte sich dieses Verhalten von SolrMarc ändern, wäre es auch möglich den Index über die Hadoop-Container von Solr zu schreiben, was das Indizieren stark beschleunigen würde.
+
+\paragraph{BeanShell-Erweiterungen}
+Bei den Skripten handelt es sich um Erweiterungen, die es ermöglichen, die in den Marc-Daten enthaltenen Daten für das Indizieren vorzubereiten. D.h. es werden spezifische Marc-Felder voruntersucht und in spezielle Solr-Felder exportiert. Aufgerufen werden die Skripte via \nameref{para:index.properties}. \\ %./data/core/conf/index.properties
+Die Skripte sind in Java-Code geschrieben und werden im folgenden erklärt.
+
+\subparagraph{getCategory.bsh} 
+Mit dem Skript ist es möglich die entsprechenden Klassifikationen aus den Marc-Datensätzen zu extrahieren. In Marc-Datensätzen befinden sich die Klassifikationen im Feld 084 mit den entsprechenden Unterfeldern. Würde man nur diese Felder in Solr via SolrMarc (ohne getCategory.bsh) indizieren, wäre es nicht mehr möglich, die jeweiligen Klassifikationen zu den Klassifikationsnummern zuzuordnen, da es sehr viele verschiedene Klassifikationen\footnote{\url{http://www.loc.gov/standards/sourcelist/classification.html}} gibt und sich diese teils ähneln (beispielsweise kann es eine Klassifikation BCL 18.00 geben und SDNB 18). \\
+Es beinhaltet vier verschiedene Methoden:
+\begin{itemize}
+	\item \textbf{\texttt{getCategoryTypeAndNr(Record)}} Exportiert nur Kategorie-Typ zusammen mit Kategorie-Nummer. Diese Variante wird nicht mehr verwendet, da  immer nur das erste Vorkommen extrahiert wird.
+	\item \textbf{\texttt{getCertainCategoryNr(Record, String)}} Wird hauptsächlich benutzt und exportiert alle Klassifikations-Nummern aus Feld 084 einer bestimmten Klassifikation, die jeweils als Parameter übergeben werden muss (z.B. \texttt{getCertainCategoryNr("bcl")}).
+	\item \textbf{\texttt{getAllCategories(Record, String, String)}} Nicht mehr in Verwendung. Extrahiert die jeweiligen Klassifikationen aus einem beliebigen Feld (falls Klassifikation nicht in Feld 084 ist).
+	\item \textbf{\texttt{writeFixName(Record, String)}} Keine Funktionalität. Gibt nur den Wert von String zurück, um in ein Feld einen fixen String schreiben zu können (z.B. für Feld „verbund“ \texttt{writeFixName("b3kat")})
+\end{itemize}
+
+\subparagraph{topicFacet.bsh}
+\label{sec:subpara:topicFacet}
+Dieses Skript ist eine Erweiterung des bereits vorhanden Skripts vom Hebis\footnote{\url{trac.hebis.de/svn/verbuendeindex/trunk/usr/SolrMarc_Generic_Binary_Unix-2.5.1/index_scripts/topicFacet.bsh}}, um Schlagworte zu indizieren. 
+\begin{itemize}
+	\item \textbf{\texttt{getTopic(Record)}} Bereits vorhandene Methode im Ursprungsskript zum Exportieren von Sachschlagworten. Diese Methode wird nicht angewendet, da es zweifelhaft war, dass die korrekten Felder exportiert wurden, sodass eine eigene Methode geschrieben wurde.
+	\item \textbf{\texttt{getKeywords(Record, String)}} Dies ist eine Methode ähnlich zu getTopic zum Extrahieren von beliebigen Schlagworten. Welche Art von Schlagwort extrahiert werden soll (beispielsweise Formschlagwort oder Sachschlagwort), wird als Parameter \texttt{typeOfKeyword} übergeben. Mögliche Werte für \texttt{typeOfKeyword}:
+	\begin{itemize}
+		\item 'c' Körperschaft, deren Ansetzungsform mit einem Geographikum beginnt 
+		\item 'f' Formschlagwort 
+		\item 'g' Geographisches/ethnographisches Schlagwort, Sprachbezeichnung 
+		\item 'k' Körperschaft (soweit nicht c) 
+		\item 'p' Personenschlagwort (in der PND durch die Satzart tp ersetzt) 
+		\item 's' Sachschlagwort 
+		\item 't' Titel eines Werkes 
+		\item 'z' Zeitschlagwort 
+	\end{itemize}
+\end{itemize}
+%TODO: stimmt das wirklich??
+Hinweis: die Bean-Shell Erweiterungen müssen aktuell noch händisch in den SolrMarc Ordner hineinkopiert werden. 
+
+\subsubsection{Perl}
+Die entwickelten Perl-Skripte dienen zur Abwicklung der administrativen Prozesse. Sie lesen die Konfigurationen ein, indizieren einen neuen Solr-Core oder steuern die Update-Prozesse über einen Scheduler. Sie erzeugen ebenso die Anfragen an Solr, welche die gewünschten Filter enthält und legen die Ergebnismenge als Dateien ab. Teilweise werden Prozesse auch über mehrere Threads verteilt um eine optimale Performance zu erreichen.
+
+\subsubsection{Kommandozeilen-Skripte}
+\label{sec:subsub:Kommando}
+Diese Skripte befinden sich im Verzeichnis \texttt{./bin} und sind zu meist Aliase für die Perl-Skripte oder aber sie nehmen administrative Aufgaben ab, wie bspw. das Anlegen eines neuen Solr-Cores inkl. der entsprechenden Verzeichnisse, des Schemas und der Registrierung bei Solr. Die folgenden Skripte sind in der Suite enthalten:
+
+\paragraph{\texttt{createCore.sh}}
+\label{sec:para:createCore}
+\begin{itemize}
+	\item Es handelt sich um ein ausführbares Bash-Skript, was einen neuen leeren Solr-Core erstellt. Die entsprechenden Dateien werden automatisch generiert und die Konfiguration für die Solr-Cores durch die Anweisungsroutine aktualisiert. Es kann ausgewählt werden ob die Initialdaten als XML- oder Marc-Format vorliegen. Es werden drei verschiedene Update Typen angeboten (siehe Abschnitt \ref{sec:para:runUpdates} runUpdates). Je nach Auswahl müssen dann anschließend die jeweiligen Pfade und das Update Intervall angegeben werden. Alle vorgenommenen Einstellungen können nachträglich in der Datei \texttt{./etc/config.ini} eingesehen und verändert werden. \\
+	Im Wesentlichen werden hier drei Schritte durchgeführt: Erstenes wird die Konfigurationsdatei (\texttt{./etc/config.ini}) um die jeweiligen Angaben des Benutzers erweitert. Zweitens wird die entsprechende Ordnerstruktur für den neuen Core hergestellt, sodass in \texttt{./data} ein neuer Core mit den jeweiligen Core-spezifischen Konfigurationen (\texttt{./data/core/conf}) angelegt wird. Die Konfigurationen sind Standardvorlagen und stammen aus dem Ordner \texttt{./etc/templates}. Und drittens wird der Core der laufenden Solr-Instanz mitgeteilt und hinzugefügt.
+	\item Aufruf: \texttt{./createCore.sh nameOfNewCore}
+\end{itemize}
+
+\paragraph{\texttt{removeCore.sh}}
+\label{sec:para:removeCore}
+\begin{itemize}
+	\item Es handelt sich um ein ausführbares Bash-Skript, was einen vorhandenen Solr-Core löscht. Es werden alle indizierten Daten, sowie initialen Daten und Updates und sonstigen Konfigurationseinträge für den entsprechenden Core gelöscht. Dies sollte nur ausgeführt werden, wenn es absolut notwendig ist.
+	\item Aufruf: \texttt{./removeCore.sh nameOfCoreToRemove}
+\end{itemize}
+
+\paragraph{\texttt{buildIndex.sh}}
+\label{sec:para:buildIndex}
+\begin{itemize}
+	\item Es handelt sich um ein ausführbares Bash-Skript, was den Solr Index mit Daten des jeweiligen Verbundes füllt und die Basisdaten Indizierung (siehe Abschnitt \ref{sec:subsub:Basis}) durchführt. Nach dem Aufruf wird zunächst eine Liste der existierenden Solr Cores ausgegeben. Zum Auswählen eines bestimmten Cores muss die dazugehörige Zahl eingetippt werden. Nach erneuter Bestätigung wird der gewählte Solr Core mit den Initialdaten indexiert. Die Initialdaten müssen dabei in der Ordnerstruktur in \texttt{./data/coreName/initialData} vorliegen. Es ist durch Setzen eines symbolischen Links auf dieses Verzeichnis möglich, die Daten beispielsweise auf Grund ihrer Gesamtgröße an einem anderen Platz zu hinterlegen. \\
+	Das Skript sollte nur einmalig beim initialen Indizieren des jewiligen Cores aufgerufen werden. Dieser Prozess kann je nach Größe der Initialdaten bis zu mehreren Tagen dauern. Wenn weitere Daten hinzukommen, die den bestehenden Index erweitern sollen, wird \texttt{runUpdates.sh} gerufen.
+	\item Aufruf: \texttt{./buildIndex.sh}
+\end{itemize}
+
+\paragraph{\texttt{runUpdates.sh}}
+\label{sec:para:runUpdates}
+\begin{itemize}
+	\item Ausführbares Bash-Skript, was parameterlos aufgerufen wird und nach Updates für die jeweiligen Cores an den verschiedenen Schnittstellen sucht. Das Skript selbst sollte nicht händisch gerufen werden, sondern durch einen Cron-Job verwaltet und täglich automatisch aufgerufen werden. (siehe auch Abschnitt \ref{sec:subsub:Updates})
+\end{itemize}
+
+\paragraph{\texttt{removeUpdates.sh}}
+\label{sec:para:removeUpdatesteCore}
+\begin{itemize}
+	\item Ausführbares Bash-Skript, was parameterlos aufgerufen wird und alle bereits geladenen Updates der Verbünde im Verzeichnis \texttt{./data/core/updates} löscht, da Updates sehr groß werden können und auf Dauer nicht gespeichert werden sollen, da die Änderungen i.d.R. im Solr-Index bereits angepasst sind.
+	\item Aufruf: \texttt{./removeUpdates.sh}
+\end{itemize}
+
+\paragraph{\texttt{getResults.sh}}
+\label{sec:para:getResults}
+\begin{itemize}
+	\item Ausführbares Bash-Skript, was parameterlos die vordefinierten Filter im Verzeichnis \texttt{./etc/solrQuery.ini} auf den jeweiligen Solr-Core anwendet und die Ergebnisse in das Verzeichnes speichert, welches in \texttt{config.ini} unter der Variable \texttt{pathResults} angegeben wurde (default: \texttt{./results}).
+	\item Aufruf: \texttt{./getResults.sh}
+\end{itemize}
+
+\begin{minipage}{\linewidth}
+\paragraph{\texttt{startSshAgent.sh}}
+\label{sec:para:startSshAgent}
+\begin{itemize}
+	%TODO: env Datei wird erstellt..
+	\item Ausführbares Bash-Skript, was parameterlos gerufen wird und dazu dient, den ssh-agent zu starten, sodass bei erstmaligem Aufruf nach Neustart, nach dem Private-Key-Passphrase gefragt wird. Es speichert die Umgebungsvariablen, die bei einer Public-Private-Key Authentifizierung notwendig sind in die Datei \texttt{./etc/env} ab, sodass für zukünftige Verbindungsanfragen kein Kennwort mehr eingegeben werden muss. Wichtig hierbei ist, dass cron-basierte Prozesse, die eine Public-Private-Key Authentifizierung zum Server benötigen (wie beispielsweise die Updates via SCP) nur automatisiert funktionieren, wenn zuvor dieses Skript ausgeführt wurde.
+	\item Aufruf: \texttt{./startSshAgent.sh} \\
+\end{itemize}
+\end{minipage}
+
+
+\subsection{System-Anforderungen}
+
+\subsubsection{Hardware (derzeitiger Testbetrieb)}
+\begin{itemize}
+	\item Intel Core i7
+	\item 64 Bit Architektur
+	\item 4 GiB RAM
+	\item Speicherplatzbedarf \textgreater 4 bis 5-fache\footnote{ergibt sich aus: Speicherplatzbedarf Initialdaten + 2x Speicherplatzbedarf Index + maximale Ergebnisgröße} der Initialdaten
+\end{itemize}
+
+\subsubsection{Software (derzeitig eingesetzte Versionen)}
+\begin{itemize}
+	\item Ubuntu 12.04 mit folgenden Zusatzmodulen
+	\begin{itemize}
+		\item curl
+		\item Oracle (Sun) Java
+	\end{itemize}
+	\item Apache Solr 4.8.1
+	\item SolrMarc SVN Revision r17461\footnote{\url{https://code.google.com/p/solrmarc/source/checkout}}
+	\item Perl 5.8.9 mit folgenden Modulen (nachinstallierbar via CPAN\footnote{\url{http://www.cpan.org/}})
+	\begin{itemize}
+	%TODO: Kommandos sollten als Superuser ausgeführt werden..
+	%TODO: dazu muss packet make installiert sein (apt-get install make)
+	%TODO: cpan> install Bundle::CPAN
+		%TODO: apt-get install build-essential notwendig!
+		\item Apache::Solr %TODO: dazu werden wieder weitere Pakete benötigt:
+							%TODO: HTML::Entities,HTML::HeadParser,Unicode::GCString,String::Print,XML::LibXML,Log::Report::Optional,String::Print,LWP::UserAgent,Log::Report,XML::LibXML::Simple
+		\item Archive::Extract	% fine 
+		\item Config::INI		% needs: Mixin::Linewise::Readers,Mixin::Linewise::Writers, PerlIO::utf8_strict
+%		\item Data::Dumper 		% preinstalled
+		\item HTTP::OAI 		% needs: HTML::HeadParser,HTML::Entities, XML::LibXML,LWP::UserAgent,XML::LibXML::SAX
+		\item (JSON::Parse )	%
+		\item LWP::Simple 		% needs: HTML::HeadParser,HTML::Entities
+		\item LWP::UserAgent 	% needs: HTML::HeadParser,HTML::Entities
+		\item MARC::Batch 		% fine
+		\item MARC::Field 		% up to date
+		\item MARC::File 		% up to date
+		\item Net::SCP 			% fine
+		\item Net::SSH 			% up to date
+		\item Sys::Info 		% needs: Sys::Info::Driver::Linux, Unix::Processors
+		\item Text::Unidecode 	% fine
+		\item Time::Piece 		% up to date
+		\item Try::Tiny 		% fine
+		\item XML::Simple		% needs: XML::Parser, XML::SAX::Expat
+	\end{itemize}
+\end{itemize}
+
+
+\subsection{Verzeichnis-Struktur}
+\label{sec:verzeichnis}
+Das Projekt ist so angelegt, dass ein spezifische Ordnerstruktur eingehalten wurde, um die jeweiligen Module je nach Funktionalität und Zweck voneinander zu trennen. \\
+Ausgehend vom Wurzelverzeichnis gibt es folgende Ordner und wichtige Unterverzeichnisse:
+
+\begin{itemize}
+	\item[] \texttt{./bin}
+	\begin{itemize}
+		\item beinhaltet alle ausführbaren Kommandozeilen-Skripte (siehe Abschnitt \ref{sec:subsub:Kommando})
+	\end{itemize}
+
+	\item[] \texttt{./data}
+	\begin{itemize}
+		\item Das Verzeichnis enthält alle Cores (Verbünde), die in der Solr Instanz angezeigt, verwaltet und geupdatet werden.
+		\begin{itemize}
+			\item[] \texttt{./data/core/conf/config.properties}	
+			\begin{itemize}
+				\item enthält Core-spezifische Einstellungen und Pfadangaben, die bei der Erstellung eines neuen Cores (Verbundes) automatisch angelegt werden
+				\item nachträgliche Änderung i.d.R. nicht mehr notwendig				
+			\end{itemize}					
+		\end{itemize}
+		\begin{itemize}
+			\item[] \texttt{./data/core/conf/index.properties}	
+			\begin{itemize}
+				\item enthält alle Core-spezifischen Angaben, welche Felder der Daten indiziert werden sollen
+				\item nachträgliche Änderung ist möglich und notwendig, z.B. wenn bibliotheksspezifische Angaben wie (Bibliotheks-)Sigel im Index gelistet werden soll
+				\item alle Änderungen müssen erfolgen bevor \texttt{./bin/buildInitialIndex.sh} ausgeführt wird, da sonst die jeweiligen Felder nicht mehr indiziert werden
+			\end{itemize}					
+		\end{itemize}
+		\begin{itemize}
+			\item[] \texttt{./data/core/initialData/}	
+			\begin{itemize}
+				\item enthält die intialen Daten vom jeweiligen Verbund
+			\end{itemize}					
+		\end{itemize}
+		\begin{itemize}
+			\item[] \texttt{./data/core/updates/}	
+			\begin{itemize}
+				\item enthält die Core-spezifischen Updates
+			\end{itemize}					
+		\end{itemize}
+		\begin{itemize}
+			\item[] \texttt{./data/core/updates/lastUpdates.txt}	
+			\begin{itemize}
+				\item enthält abhängig von der Update API entweder den letzten Zeitstempel des korrekten Updates (bei OAI) oder die Dateinamen von den bereits durchgeführten Updates (bei FTP/SCP)
+				\item sollte nicht verändert werden
+			\end{itemize}					
+		\end{itemize}
+	\end{itemize}
+
+	\item[] \texttt{./etc}
+	\begin{itemize}
+		\item enthält wichtige Dateien wie die Konfigurationen der jeweiligen Cores und eine Datei mit der die jeweiligen Filter geschrieben werden können
+		\begin{itemize}
+			\item[] \texttt{./etc/config.ini}
+			\begin{itemize}
+				\item enthält die allgemeinen und Core-spezifischen Konfigurationen für die internen Skripte
+			\end{itemize}
+		\end{itemize}
+		\begin{itemize}
+			\item[] \texttt{./etc/solrQuery.ini}
+			\begin{itemize}
+				\item enthält die jeweiligen Filter in Form von Solr-Queries
+			\end{itemize}
+		\end{itemize}
+		\begin{itemize}
+			\item[] \texttt{./etc/env}
+			\begin{itemize}
+				\item enthält die jeweiligen Umgebungsvariablen für die SSH Public-Private-Key Authentifizierung
+				\item sollte die Prozess-ID des Ssh-Agent nicht mehr existieren, muss ein neuer über das Skript \texttt{./bin/startSshAgent.sh} gestartet werden
+			\end{itemize}
+		\end{itemize}
+	\end{itemize}
+
+	\item[] \texttt{./lib}
+	\begin{itemize}
+		\item enthält die jeweiligen Perl Skripte, die über die Bash-Skripte aufgerufen werden
+	\end{itemize}
+
+	\item[] \texttt{./log}
+	\begin{itemize}
+		\item enthält eine globale log.txt in denen alle Änderungen, Updates usw. verzeichnet werden
+		\item enthält außerdem die jeweiligen Core-spezifischen Log-Dokumente, die angelegt werden, wenn die Core Daten initial in den Solr Index initialisiert werden
+	\end{itemize}
+
+	\item[] \texttt{./results}
+	\begin{itemize}
+		\item enthält die Ergebnisse der Suche für die speziellen Filter sortiert nach Name des Filters bzw. Abfragezeitpunkt
+	\end{itemize}
+
+\end{itemize}
+
+
+\subsection{Konfiguration}
+\subsubsection{Basis-Konfiguration}
+\paragraph{./etc/config.ini}
+\label{sec:para:config.ini}
+Es gibt verschiedene Arten von Konfigurationen. Im wesentlichen gibt es eine Hauptkonfigurationsdatei \texttt{./etc/config.ini} in der die jeweiligen Verbünde automatisch ein und ausgetragen werden, wenn ein neuer Core angelegt bzw. gelöscht wird. \\
+Alle Pfade in diesem Dokument können relativ oder absolut angegeben werden. Ist der Pfad absolut, d.h. beginnt dieser mit / wird der Pfad wie angegeben verwendet. Ist ein Pfad relativ, d.h. beginnt der Pfad mit einem Namen, wird der Pfad bis zum Hauptverzeichnis angenommen (Beispiel: das Projekt befindet sich im Ordner \texttt{/home/userX/workspace/fachkatalog/} und als Ergebnis-Pfad wurde \texttt{pathResults = results/} angegeben, dann wird dieser im verwendeten Skript erweitert zu \texttt{/home/fichte/workspace/fachkatalog/results/}. \\
+Weiterhin ist es wichtig, dass ein Pfad immer mit einem Slash (/) enden muss, da es sonst zu Fehlern durch Pfadkonkatenationen in den jeweiligen Skripten kommen kann. \\
+Folgende Parameter sind in der Konfigurationsdatei enthalten:
+
+\begin{center}
+\newcolumntype{T}{l<{\ttfamily}}
+\begin{longtable}{| l | p{5cm} | p{5cm} | } 
+	\multicolumn{3}{l}{(Core-unabhängig:)} \\ \hline
+	\textbf{Parameter} & \textbf{Beispiel} & \textbf{Erklärung} \\ \hline
+	
+	\texttt{pathToFachkatalogGlobal} & /home/userX/workspace/
+	fachkatalog/ & Globaler Pfad, in dem sich das Projekt befindet \\ \hline
+	
+	\texttt{pathIndexfile} & /home/userX/Downloads/
+	solrMarcSource/
+	script\_templates/indexfile & Pfad in dem sich das SolrMarc Skript zum indizieren der Datensätze befindet \\ \hline
+	
+	\texttt{pathLogFile} & log/log.txt & Pfad in der das Log-File abgelegt werden soll (standardmäßig im Unterverzeichnis log) \\ \hline
+	
+	\texttt{pathLogFileAlternative} & log/log\_rest.txt & Pfad in das zusätzliche Log-File abgelegt wird, was beim Erstellen von Cores angelegt wird (standardmäßig im Unterverzeichnis log) \\ \hline
+	
+	\texttt{pathToSolrCoresDefault} & /home/userX/Downloads/solr/
+	solr-4.8.1/example/solr/ & Pfad, in dem sich die Solr Instanz befindet \\ \hline
+	
+	\texttt{urlSolrDefault} & http://127.0.0.1:8983/solr/ & Standard-URL über die die Solr Instanz zu erreichen ist \\ \hline
+	
+	\texttt{resultsMaxRecordsPerFile} & 10000 & Anzahl der maximal erlaubten Records, die in einem Ergebnis-Datei sein dürfen, wird die Anzahl überschritten, wird eine neue Datei erstellt \\ \hline
+	
+	\texttt{resultsMaxNumber} & 1000000 & Anzahl der maximal erlaubten Ergebnisse. Bei sehr allgemeinen Filter-Anfragen kann die Ergebnis-Menge sehr groß ausfallen. Dies kann vermieden werden, wenn ein Wert $\textgreater\space 0$ gewählt wird. Bei $\le 0$ wird das Ergebnisset nicht beschränkt. \\ \hline
+		
+	\texttt{serverResponseTimeoutSec} & 1800 & Solr-Anfrage Timeout: wenn der Server in diese Zeit nicht auf die Anfrage reagiert, wird ein Fehler ausgegeben \\ \hline
+	
+	%TODO: FEHLER!?
+	\texttt{pathResults} & etc/solrQuery.ini & Pfad, in denen die Ergebnisse der Filter-Anfragen gespeichert werden. \\ \hline
+	
+	\texttt{resultType} & mrc & Gibt an in welchem Format die Ergebnisse zurückgebeben werden sollen (xml oder mrc möglich) \\ \hline
+	
+	
+	\multicolumn{3}{l}{(Core-spezifisch:)} \\ \hline
+	\textbf{Parameter} & \textbf{Beispiel} & \textbf{Erklärung} \\ \hline
+	
+	\texttt{updateType} & ftp & Einer von drei möglichen Update Varianten \\ \hline
+	
+	\texttt{indexPropertiesFile} & data/swb/conf/index.properties & Pfadangabe zur Konfigurationsdatei; sollte nicht verändert werden \\ \hline
+	
+	\texttt{configPropertiesFile} & data/swb/conf/config.properties & Pfadangabe zur Konfigurationsdatei; sollte nicht verändert werden \\ \hline
+	
+	\texttt{updateIntervalInDays} & 14 & Zeitraum nachdem wieder nach neuen Updates gesucht werden soll, seit dem letzten Update \\ \hline
+
+	\texttt{updates} & data/swb/updates/ & Pfad in dem die Updates gespeichert werden; sollte nicht verändert werden \\ \hline
+	
+	\texttt{initialDataFormat} & xml & Formatangabe der Initialdaten \\ \hline
+	
+	\texttt{updateIsRunning} & 0 & Lock-Flag, damit bei lang andauernden Updates nicht mehrmals dasselbe Update gerufen wird. Ist der Parameter 1, wird gerade nach Updates gesucht bzw. geladen und dadurch dieser Core gesperrt. Bei 0 ist er freigegeben. \\ \hline
+	
+	\texttt{updateFormat} & xml & Format in dem die Updates zur Verfügung gestellt werden \\ \hline
+	
+	\texttt{urlSolrCore} & http://127.0.0.1:8983/solr/swb & URL unter der der spezifische Core zu erreichen ist \\ \hline
+	
+	\texttt{check} & 0 & Flag, der angibt, ob der jeweilige Core geupdatet werden soll oder nicht. Ist der Wert 1, wird bei den automatischen Updates danach gesucht, andernfalls nicht. \\ \hline
+	
+	\texttt{lastUpdate} & 2014-11-07T12:39:42Z & Zeitpunkt des letzten durchgeführten Updates.  \\ \hline
+	
+	\texttt{initial} & data/swb/initialData/ & Pfad, in der sich die initialen Daten für die erstmalige Indizierung befinden. \\ \hline
+	
+	
+	%\textbf{Parameter} & \textbf{Beispiel} & \textbf{Erklärung} \\ \hline
+	\multicolumn{3}{l}{(FTP-spezifisch:)} \\ \hline
+	
+	\texttt{ftpUrl} & http://swblod.bsz-bw.de/od/ & CCC \\ \hline
+	
+	
+	\multicolumn{3}{l}{(OAI-spezifisch:)} \\ \hline
+	
+	\texttt{oaiUrl} & http://bvbr.bib-bvb.de:8991/aleph-cgi/
+	oai/oai\_opendata.pl & URL unter der die OAI-Updates ohne Zugangsbeschränkung erreicht werden können. \\ \hline
+	
+
+	\multicolumn{3}{l}{(SCP-spezifisch:)} \\ \hline
+	
+	\texttt{sshDataPath} & /home/huberlin/gbv-daten/ & Pfad auf dem Server \\ \hline
+	
+	\texttt{sshHost} & kobv & Server-Adresse auch als ssh Kürzel möglich (muss in ~.ssh/config eingetragen sein) \\ \hline
+	
+	
+\end{longtable}
+\end{center}
+
+\lstset{
+	numbers=left, 
+	numberstyle=\small, 
+	numbersep=8pt, 
+	frame = single, 
+	language=Pascal, 
+	framexleftmargin=15pt,
+	breaklines=true
+}
+\textbf{Konfigurationsbeispiel \texttt{config.ini}} \\
+(Dies dient nicht als Konfigurationsvorlage sondern nur als Beispiel, da die nicht-globalen Einträge für jeden Core über das Skript zum Erstellen von Cores automatisch erstellt werden.)
+\lstinputlisting{config.ini.txt}
+
+
+\paragraph{./data/core/conf/config.properties}
+Es handelt sich hier um eine von SolrMarc benötigte Core-spezifische Konfigurationsdatei, in der u.a. Pfade, die Solr-URL und das Format angegeben sind. Diese Datei wird automatisch beim Anlegen des dazugehörigen Cores erstellt und muss i.d.R. nicht nachträglich verändert werden. \\ \\
+
+\textbf{Konfigurationsbeispiel \texttt{config.properties}} 
+\lstinputlisting{config.properties.txt}
+
+\paragraph{./data/core/conf/index.properties}
+\label{para:index.properties}
+Es handelt sich hier um eine von SolrMarc benötigte Core-spezifische Konfigurationsdatei, in der aufgelistet wird, welche Felder der Marc-Datensätze indiziert werden sollen. Dabei können die von SolrMarc bereitgestellten Methoden, wie z.B. \texttt{getAllAlphaSubfields} und \texttt{FullRecordAsMARC}, aber auch die eigens angefertigten BeanShell-Erweiterungen verwendet werden. Hierbei ist zu beachten: es können immer nur solche Felder indiziert werden, die auch in dem Solr-Schema definiert sind. 
+
+\textbf{Konfigurationsbeispiel \texttt{index.properties}} 
+\lstinputlisting{index.properties.txt}
+
+\subsubsection{Basisdaten Indizierung}
+\label{sec:subsub:Basis}
+Nachdem zunächst ein neuer Core über das Skript \hyperref[sec:para:createCore]{\texttt{createCore.sh}} angelegt wurde, müssen anschließend die initialen Daten in das Core-spezifische Verzeichnis verschoben werden (siehe Abschnitt \ref{sec:verzeichnis}). Ist das erfolgt, sollte noch einmal geprüft werden, ob alle Parameter in den Basis-Konfigurationen gesetzt wurde und der Core korrekt angelegt wurde. \\
+Es können anschließend Daten mit dem Skript \texttt{buildIndex.sh} indiziert werden. Als Namenskonvention gilt, wie bei Updates und Löschungen im Index, dass alle initialen Daten als MARC oder MARC-XML Daten (\texttt{.mrc} oder \texttt{.xml}) vorliegen müssen, um von SolrMarc indiziert werden zu können. 
+
+\subsubsection{Updates und Löschungen im Index}
+\label{sec:subsub:Updates}
+Updates sind Aktualisierungsdateien, die in regelmäßigen Abständen von den entsprechenden Verbünden bereit gestellt werden. Sie lassen sich unterteilt in: 
+%TODO: Updates werden Datumsorientiert geupdatet
+\begin{itemize}
+	\item Lösch-Updates: \\
+		Die Dateien enthalten in der Regel immer nur die Identifikatoren (IDs) der Datensätze, die gelöscht werden sollen, wobei pro Zeile genau eine ID gelistet wird. Bei OAI Schnittstellen können Lösch-Updates und Daten-Updates in derselben Ergebnismenge liegen. \\
+		Namenskonvention (bei SCP und FTP): \\
+		\texttt{file.del} (z.B. \texttt{gbv-catalog-delete-2015-02-01.del})
+	\item Daten-Updates: \\
+		Die Dateien enthalten die eigentlichen neuen oder überarbeiteten Meta-Informationen. \\
+		Namenskonvention (bei SCP und FTP):\\
+		\texttt{file.xml} oder \texttt{file.mrc} (z.B. \texttt{gbv-catalog-update-2015-02-01\_1of4.mrc})
+\end{itemize}
+
+%-subsubsubsection-
+\paragraph{Download-Formate}
+Die bezogenen Updates werden im .tar.gz Format erwartet. Sollte andere Formate bzw. Komprimierungen vorliegen, muss entsprechend das Skript \texttt{./lib/getUpdates.pl} verändert werden. Die dann entpackten Updates aus den jeweiligen komprimierten Dateien, müssen der obrigen Namenskonvention entsprechen, da SolrMarc sonst nicht korrekt indizieren kann. \\
+Die Updates der jeweiligen Cores werden abhängig von ihrem jeweiligen Quellen unterschiedlich geladen. Aktuell werden hier drei verschiedene Methoden angeboten: 
+
+\begin{itemize}
+	\item OAI \\
+		Open Archives Initiative bietet ein Protokoll zum Harvesten von Metadaten. Das Protokoll basiert auf XML und REST und im wesentlichen wird bei dieser Art der Update-Konfiguration eine REST-Anfrage generiert und abgeschickt. Die gelieferten Datensätze, die einem bestimmten Zeitraum zuzuordnen sind werden dann in XML-Format gespeichert.
+	\item SCP \\ 
+	%TODO: Cronjob beschreiben
+	%TODO: 
+		Ist eine simple Konfigurations-Variante, die es automatisiert ermöglicht per Secure Copy die bereitgestellten Updates vom Server auf den lokalen Rechner zu kopieren. Damit dieses Verfahren automatisch funktioniert (z.B. per Cronjob), muss die Verbindung zum entsprechenden Server per Public-Private-Key Authentifizierung vollzogen werden. Dazu muss der entsprechende Private-Key mit Hilfe des Skriptes \hyperref[sec:para:startSshAgent]{\texttt{startSshAgent.sh}} entschlüsselt werden.
+	\item FTP \\
+		Ist eine simple Konfigurations-Variante, die es automatisiert ermöglicht, angebotene Updates die sich auf dem jeweiligen Verbundsserver befinden herunterzuladen.
+\end{itemize}
+
+\subsubsection{Solr-Schema}
+Das Schema des Indizes bildet die Grundlage für die Filterung der Titeldaten. Definiert ist es in der schema.xml und ist jeweils spezifisch für einen entsprechenden Core. \\
+In ihm werden die folgenden Felder definiert. 
+
+\begin{center}
+	\begin{longtable}{| p{2cm} | p{2.3cm} | p{0.1cm} | p{0.1cm} | p{0.1cm} | p{0.1cm}  p{0.1cm}  p{0.1cm} | p{4cm} | p{2.8cm} | } 
+	\hline
+		\parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=r]{90}{\textbf{Feld-Name}}}} 
+			& \parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=r]{90}{\textbf{Typen-Klasse}}}}
+			& \parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=r]{90}{\textbf{Indexed}}}} 
+			& \parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=r]{90}{\textbf{Stored}}}}
+			& \parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=r]{90}{\textbf{Multi-Valued}}}}
+			& \parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=r]{90}{\textbf{Required}}}} 
+			& \parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=r]{90}{\textbf{Unique}}}} 
+			& \parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=r]{90}{\textbf{default}}}} 
+			& \parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=r]{90}{\textbf{Beschreibung}}}} 
+			& \parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=r]{90}{\textbf{Beispiel}}}} \\ 
+			&&&&& &&&& \\
+			&&&&& &&&& \\
+			&&&&& &&&& \\
+			&&&&& &&&& \\
+			\hline 
+		
+		\texttt{id} 
+			& \texttt{solr.StrField} 
+			& \texttt{x} 
+			& \texttt{x} 
+			& \texttt{-} 
+			& \texttt{x} & \texttt{x} & \texttt{-} 
+			& ID des Marc-Datensatzes; Marc[001] ControlNumber 
+			& \texttt{id: "515695505"} \\ \hline
+		
+		\texttt{\_version\_} 
+		& \texttt{solr.TrieLong Field} 
+		& \texttt{x} 
+		& \texttt{x} 
+		& \texttt{-} 
+		& \texttt{-} & \texttt{-} & \texttt{-} 
+		& Solr internes Feld zur Versionierung 
+		& \texttt{\_version\_: 148611044441325 5700} \\ \hline
+		
+		\texttt{timestamp} 
+		& \texttt{solr.TrieDate Field} 
+		& \texttt{-} 
+		& \texttt{-} 
+		& \texttt{-} 
+		& \texttt{-} & \texttt{-} & \tiny \parbox[t]{2mm}{\multirow{1}{*}{\rotatebox[origin=r]{90}{\textbf{NOW}}}} 
+		& Datum der Indizierung
+		& \texttt{timestamp: 2014-11-29T 22:36:28.633Z} \\ \hline
+
+		\texttt{publishDate} 
+		& \texttt{solr.StrField} 
+		& \texttt{x} 
+		& \texttt{-} 
+		& \texttt{x} 
+		& \texttt{-} & \texttt{-} & \normalsize \textbf{-} 
+		& Datum der Veröffentlichung; Marc[362:a]
+		& \texttt{publishDate: [1.1815(1817) - 2.1816(1818)]} \\ \hline
+		
+		\texttt{keywords} 
+		& \texttt{solr.Text Field} 
+		& \texttt{x} 
+		& \texttt{-} 
+		& \texttt{x} 
+		& \texttt{-} & \texttt{-} & \textbf{-} 
+		& Schlagwort; Marc[689:x], wobei x einer von 8 möglichen Subfeldern sein kann (siehe Abschnitt \ref{sec:subpara:topicFacet})
+		&  \\ \hline
+		
+		\texttt{verbund} 
+		& \texttt{solr.StrField} 
+		& \texttt{x} 
+		& \texttt{-} 
+		& \texttt{x} 
+		& \texttt{-} & \texttt{-} & \textbf{-} 
+		& Kennung der jeweiligen Datenquelle, spez. in index.properties
+		& \texttt{verbund: [GBV]} \\ \hline
+		
+		\texttt{sigel} 
+		& \texttt{solr.Text Field} 
+		& \texttt{x} 
+		& \texttt{-} 
+		& \texttt{x} 
+		& \texttt{-} & \texttt{x} & \textbf{-} 
+		& Standort-Nachweise der einzelnen Exemplare, als Bibliothekssigel
+		& \texttt{sigel: ["Ka51"]} \\ \hline
+		
+		\texttt{marc\_display} 
+		& \texttt{solr.Text Field} 
+		& \texttt{-} 
+		& \texttt{x} 
+		& \texttt{-} 
+		& \texttt{-} & \texttt{-} & \textbf{-} 
+		& kompletter Marc-Datensatzes
+		& \texttt{"marc\_display": "03392nam a2200865 cc45000010010000 0000300070001000 5001700017008 …"} \\ \hline
+		
+		\texttt{*\_category} 
+		& \texttt{solr.Text Field} 
+		& \texttt{x} 
+		& \texttt{-} 
+		& \texttt{x} 
+		& \texttt{-} & \texttt{-} & \textbf{-} 
+		& dynamische Felder für die Indizierung der Kategorien; Zuordnung der Felder in index.properties; Marc[084:2]
+		& \texttt{"BCL\_category": ["52.88"], "SFB\_category": ["TECH 425"]} \\ \hline
+	\end{longtable}
+\end{center}
+Leider befinden sich in vielen Feldern sehr unterschiedliche Inhalte, welche eine Normalisierung quasi unmöglich machen. Hier sei bspw. das Feld „\texttt{publishDate}“ genannt, bei welchem eine Formatierung als Datumswert wünschenswert wäre, um dieses Feld sinnvoll zu filtern.
+
+\subsection{Abfrage}
+Die Abfragen an das Solr System werden standardmäßig in der Solr-Query-Syntax via \texttt{curl} gestellt. Abfragen können sowohl manuell, als auch über das Skript \hyperref[sec:para:getResults]{\texttt{getResults.sh}} gesteuert werden, wobei sich letzteres auf Grund von Logging und dem Speichern der Records besser eignet. 
+
+\subsubsection{./etc/solrQuery.ini}
+Dieses Datei enthält die jeweiligen Filter-Anfragen zu den spezifischen Cores. Es können mehrere Anfragen hintereinander gestellt werden aber aktuell keine kombinierte Anfrage über alle Cores. Einige Beispielanfragen werden im folgenden beschrieben.
+\begin{itemize}
+	\item Beispiel für eine Abfrage einer konkreten RVK-Klassifikation (RA 1000 = Geographie, Zeitschriften) vom Core GBV:
+		\begin{alltt}
+			[filter1]
+			verbund=gbv
+			query=RVK_category:"ra 1000"
+		\end{alltt}
+	\item Beispiel für eine Abfrage für einen konkreten RVK-Klassifikations-Bereich (ST 240 – ST 250 = Informatik, Programmiersprachen) im Core GBV:
+		\begin{alltt}
+			[filter2]
+			verbund=gbv
+			query=RVK_category:["st 240" TO "st 250"]
+		\end{alltt}
+	\item Beispiel für eine logisch verknüpfte Anfrage: 
+		\begin{alltt}
+			[filter3]
+			verbund=gbv
+			query=(BCL_category:"17.28" OR SDNB_category:"33") AND 	keywords:"landeskunde"
+		\end{alltt}
+\end{itemize}
+Alle Ergebnisse werden standardmäßig unter \texttt{./results} als \texttt{filterName\_DatumTUhrzeitZ\_query.mrc} mit zusätzlichen Abfrageinformationen in einer gleichnamigen Textdatei abgelegt. 
+
+% % % % % % % % % % % % % % Einschränkungen
+\newpage
+\section{Workaround}
+Im Wesentlichen sind folgende Schritte durchzuführen: 
+\begin{itemize}
+	%TODO: prüfen ob diese Variablen wirklich angegeben werden müssen!
+	\item[0.] \hyperref[sec:para:config.ini]{\texttt{config.ini}} erstellen (dazu kann \texttt{config.ini.plain} kopiert werden) und genannte Pfad-Variablen anpassen
+	\item[1.] Solr Instanz starten (\texttt{java -jar -Xmx2048M -Xms512M start.jar})
+	\item[2.] neuen Solr-Core erstellen via \hyperref[sec:para:createCore]{\texttt{createCore.sh}} und Eingabeaufforderungen folgen
+	\item[3.] (optional) fehlerhaft oder testweise angelegten Solr-Core löschen via \hyperref[sec:para:removeCore]{\texttt{removeCore.sh}} und Eingabeaufforderungen folgen
+	\item[4.] Initialdaten in das automatisch angelegten Core-Verzeichnis \texttt{fachkatalog/data/coreX/initialData/} Marc- oder Marc-XML-Daten zum Befüllen des Cores hineinkopieren
+	\item[5.] in \hyperref[para:index.properties]{\texttt{index.properties}} festlegen welche Felder für diesen Core indiziert werden sollen und \texttt{"CHANGE\_THIS\_NAME"} in gewünschten Namen des Cores ändern (sinnvollerweise derselbe Name, wie beim Erstellen des Cores zuvor)
+	\item[6.] Daten im Solr-Core indizieren via \hyperref[sec:para:buildIndex]{\texttt{buildIndex.sh}}
+	\item[7.] (optional) in Vorbereitung auf Updates ssh-agent starten via \hyperref[sec:para:startSshAgent]{\texttt{startSshAgent.sh}}
+	\item[8.] (optional) alle alten Updates in Solr-Core einpflegen via \hyperref[sec:para:runUpdates]{\texttt{runUpdates.sh}}
+	\item[9.] (optional) Cron-Job für Auto-Updates einrichten, welcher regelmäßig (beispielsweise täglich um Mitternacht) das Skript \texttt{runUpdates.sh} startet
+	\begin{itemize}
+		\item Crontab öffnen: \texttt{\$ crontab -e}
+		\item folgende Zeile anfügen: \texttt{@midnight /CHANGE/THIS/PATH/fachkatalog/bin/runUpdates.sh}
+	\end{itemize}
+	\item[10.] neuen Filter-Regel erstellen in Datei \hyperref[sec:para:runUpdates]{\texttt{solrQuery.ini}} (dazu kann \texttt{solrQuery.ini.plain} kopiert werden)
+	\item[11.] Anfrage(n) an Solr-Core stellen via \hyperref[sec:para:getResults]{\texttt{getResults.sh}}
+	
+\end{itemize}
+
+%\subsection{title}
+
+%TODO.. ausführlicher!
+
+% % % % % % % % % % % % % % Einschränkungen
+\newpage
+\section{Einschränkungen}
+\begin{itemize}
+	\item Indizierung
+	\begin{itemize}
+		\item Indizierung (sowohl initial als auch Updates) nur von Metadaten die im MARC-XML oder MARC-Format vorliegen (momentan keine Unterstützung von RDF-Daten)
+		\item nur per REST Schnittstelle, d.h. die Indizierung kann relativ viel Zeit in Anspruch nehmen, da Daten nicht direkt in Index abgelegt werden
+	\end{itemize}
+	
+%	\item Updates
+%	\begin{itemize}
+		%TODO: striketrough!
+%		\item sout{bisher nicht im Cron-Job Modus getestet}
+%	\end{itemize}
+	
+	\item Testinstanz
+	\begin{itemize}
+		\item nur auf Ubuntu getestet
+		\item möglicherweise Pfadprobleme etc. unter Windows
+	\end{itemize}
+	
+	\item Abfragen
+	\begin{itemize}
+		\item nur auf Basis des Indizierungsschemas %TODO: was damit sematisch gemeint
+		\item keine nachträgliche Änderung des Index-Schemas ohne vollständige Neuindizierung (Hinzufügen von sinnvoller Auswahl an dynamischen Feldern notwendig)
+		\item Beschränkungen durch Inhalte der Marc-Daten (z.B. kann nicht allgemein nach Erscheinungsjahr gesucht werden, wenn kein einheitliches Format umgesetzt wird)
+		\item keine Anfragen über alle Cores (z.B. via shards, da dies zu lange Response Zeiten verursachen)
+		
+	\end{itemize}
+\end{itemize}
+
+% % % % % % % % % % % % % % ToDos
+\section{ToDos}
+\begin{itemize}
+	\item Identifizierung von Standorten innerhalb des GBV
+	\item Erfassung von RDF Quellen
+	\item Kommandozeilen-Lösungen für MS Windows
+	\item Configs für verteilte Solr Instanzen (aktuell immer nur ein Verzeichnis)
+\end{itemize}
+\newpage
+
+\pagestyle{empty}
+\addcontentsline{toc}{section}{Literaturverzeichnis}
+\bibliography{literatur}
+%\bibliographystyle{dinat}
+%\bibliographystyle{alpha}
+%\bibliographystyle{alphadin}
+\bibliographystyle{apacite}
+
+
+
+\end{document}

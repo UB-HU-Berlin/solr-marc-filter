@@ -1,0 +1,28 @@
+pathToFachkatalogGlobal = /home/user/fachkatalog/
+pathIndexfile = /home/user/solrMarcSource/script_templates/indexfile
+pathLogFile = log/log.txt
+pathLogFileAlternative = log/log_rest.txt
+pathToSolrCoresDefault = /home/user/solr/solr-4.8.1/example/solr/
+urlSolrDefault = http://127.0.0.1:8983/solr/
+resultsMaxRecordsPerFile = 10000
+resultsMaxNumber = 0
+pathQuery = etc/solrQuery.ini
+pathToSolrMarcDefault = /home/user/solrMarcSource/
+serverResponseTimeoutSec = 1800
+pathResults = results/
+resultType = mrc
+
+[swb]
+updateType = ftp
+indexPropertiesFile = data/swb/conf/index.properties
+configPropertiesFile = data/swb/conf/config.properties
+updateIntervalInDays = 14
+updates = data/swb/updates/
+initialDataFormat = xml
+updateIsRunning = 0
+updateFormat = xml
+urlSolrCore = http://127.0.0.1:8983/solr/swb
+check = 1
+lastUpdate = 2014-11-07T12:39:42Z
+ftpUrl = http://swblod.bsz-bw.de/od/
+initial = data/swb/initialData/

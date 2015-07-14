@@ -170,7 +170,7 @@ sub getUpdates(@){
 			$ENV{"SSH_AUTH_SOCK"} = $SSH_AUTH_SOCK;
 			
 			my $cmd = "ls $pathToSshData";
-			sshopen2("$user\@"."$host", *READER, *WRITER, "$cmd") || die "ssh: $!";
+			sshopen2("$user\@"."$host", *READER, *WRITER, "$cmd") || die  &logMessage("ERROR", "($verbund) sshError: $!");	#TODO: check if correct
 			
 			#TODO: make it independet from 'gbv'!
 			&logMessage("WARNING", "($verbund) all files in target sshDataPath will be added!") if not $verbund eq 'gbv';

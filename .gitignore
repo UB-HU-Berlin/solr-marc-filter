@@ -19,6 +19,7 @@
 # test files
 _test*
 test*.*
+*test
 
 # except online docu
 *.textile
