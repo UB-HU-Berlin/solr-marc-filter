@@ -1,4 +1,4 @@
-pathToFachkatalogGlobal = /home/user/fachkatalog/
+pathToFachkatalogGlobal = /home/user/solr-marc-filter/
 pathIndexfile = /home/user/solrMarcSource/script_templates/indexfile
 pathLogFile = log/log.txt
 pathLogFileAlternative = log/log_rest.txt

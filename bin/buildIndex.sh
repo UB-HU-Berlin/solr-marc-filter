@@ -36,7 +36,8 @@ fi
 
 core=${array[$number]}
 
-echo "Are you shure to index the Core >$core<? Type YES to continue"
+echo "Are you shure to index the Core $core?. Check index.properties file to make shure everything you want will be indicated."
+echo "Type YES to continue .."
 read continue
 
 #TODO index all ..

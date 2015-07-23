@@ -20,6 +20,9 @@ top=2.5cm, bottom=2.5cm]{geometry}
 \usepackage[normalem]{ulem}
 \usepackage{cancel}
 
+% Aufzählung
+\usepackage{enumerate}
+
 %URL
 \usepackage[hyphens]{url}
 \usepackage{hyperref}
@@ -206,42 +209,51 @@ Diese Skripte befinden sich im Verzeichnis \texttt{./bin} und sind zu meist Alia
 \begin{itemize}
 	\item Es handelt sich um ein ausführbares Bash-Skript, was einen neuen leeren Solr-Core erstellt. Die entsprechenden Dateien werden automatisch generiert und die Konfiguration für die Solr-Cores durch die Anweisungsroutine aktualisiert. Es kann ausgewählt werden ob die Initialdaten als XML- oder Marc-Format vorliegen. Es werden drei verschiedene Update Typen angeboten (siehe Abschnitt \ref{sec:para:runUpdates} runUpdates). Je nach Auswahl müssen dann anschließend die jeweiligen Pfade und das Update Intervall angegeben werden. Alle vorgenommenen Einstellungen können nachträglich in der Datei \texttt{./etc/config.ini} eingesehen und verändert werden. \\
 	Im Wesentlichen werden hier drei Schritte durchgeführt: Erstenes wird die Konfigurationsdatei (\texttt{./etc/config.ini}) um die jeweiligen Angaben des Benutzers erweitert. Zweitens wird die entsprechende Ordnerstruktur für den neuen Core hergestellt, sodass in \texttt{./data} ein neuer Core mit den jeweiligen Core-spezifischen Konfigurationen (\texttt{./data/core/conf}) angelegt wird. Die Konfigurationen sind Standardvorlagen und stammen aus dem Ordner \texttt{./etc/templates}. Und drittens wird der Core der laufenden Solr-Instanz mitgeteilt und hinzugefügt.
-	\item Aufruf: \texttt{./createCore.sh nameOfNewCore}
+	\item Aufruf: \texttt{\$ ./createCore.sh nameOfNewCore}
 \end{itemize}
 
 \paragraph{\texttt{removeCore.sh}}
 \label{sec:para:removeCore}
 \begin{itemize}
 	\item Es handelt sich um ein ausführbares Bash-Skript, was einen vorhandenen Solr-Core löscht. Es werden alle indizierten Daten, sowie initialen Daten und Updates und sonstigen Konfigurationseinträge für den entsprechenden Core gelöscht. Dies sollte nur ausgeführt werden, wenn es absolut notwendig ist.
-	\item Aufruf: \texttt{./removeCore.sh nameOfCoreToRemove}
+	\item Aufruf: \texttt{\$ ./removeCore.sh nameOfCoreToRemove}
 \end{itemize}
+
+\paragraph{\texttt{prepareSolrMarc.sh}}
+\label{sec:para:prepareSolrMarc}
+\begin{itemize}
+	\item Es handelt sich um ein ausführbares Bash-Skript, was ausschließlich zum Herunterladen und konfigurieren von SolrMarc dient und nur einmalig zu Beginn beim Einrichten angewendet werden sollte. Alternativ können die Einstellungen händisch ohne Skript durchgeführt werden (beschrieben in Abschnitt \ref{sec:workaround}).
+	\item Aufruf: \texttt{\$ ./prepareSolrMarc.sh}
+\end{itemize}
+
 
 \paragraph{\texttt{buildIndex.sh}}
 \label{sec:para:buildIndex}
 \begin{itemize}
 	\item Es handelt sich um ein ausführbares Bash-Skript, was den Solr Index mit Daten des jeweiligen Verbundes füllt und die Basisdaten Indizierung (siehe Abschnitt \ref{sec:subsub:Basis}) durchführt. Nach dem Aufruf wird zunächst eine Liste der existierenden Solr Cores ausgegeben. Zum Auswählen eines bestimmten Cores muss die dazugehörige Zahl eingetippt werden. Nach erneuter Bestätigung wird der gewählte Solr Core mit den Initialdaten indexiert. Die Initialdaten müssen dabei in der Ordnerstruktur in \texttt{./data/coreName/initialData} vorliegen. Es ist durch Setzen eines symbolischen Links auf dieses Verzeichnis möglich, die Daten beispielsweise auf Grund ihrer Gesamtgröße an einem anderen Platz zu hinterlegen. \\
 	Das Skript sollte nur einmalig beim initialen Indizieren des jewiligen Cores aufgerufen werden. Dieser Prozess kann je nach Größe der Initialdaten bis zu mehreren Tagen dauern. Wenn weitere Daten hinzukommen, die den bestehenden Index erweitern sollen, wird \texttt{runUpdates.sh} gerufen.
-	\item Aufruf: \texttt{./buildIndex.sh}
+	\item Aufruf: \texttt{\$ ./buildIndex.sh}
 \end{itemize}
 
 \paragraph{\texttt{runUpdates.sh}}
 \label{sec:para:runUpdates}
 \begin{itemize}
-	\item Ausführbares Bash-Skript, was parameterlos aufgerufen wird und nach Updates für die jeweiligen Cores an den verschiedenen Schnittstellen sucht. Das Skript selbst sollte nicht händisch gerufen werden, sondern durch einen Cron-Job verwaltet und täglich automatisch aufgerufen werden. (siehe auch Abschnitt \ref{sec:subsub:Updates})
+	\item Es handelt sich um ein ausführbares Bash-Skript, was parameterlos aufgerufen wird und nach Updates für die jeweiligen Cores an den verschiedenen Schnittstellen sucht. Bei genügend freiem Speicherplatz wird nach jedem erfolgreichen Update eine Optimierung des Solr-Cores durchgeführt. \\
+	Das Skript selbst sollte nicht händisch gerufen werden, sondern durch einen Cron-Job verwaltet und täglich automatisch aufgerufen werden. (siehe auch Abschnitt \ref{sec:subsub:Updates})
 \end{itemize}
 
 \paragraph{\texttt{removeUpdates.sh}}
 \label{sec:para:removeUpdatesteCore}
 \begin{itemize}
-	\item Ausführbares Bash-Skript, was parameterlos aufgerufen wird und alle bereits geladenen Updates der Verbünde im Verzeichnis \texttt{./data/core/updates} löscht, da Updates sehr groß werden können und auf Dauer nicht gespeichert werden sollen, da die Änderungen i.d.R. im Solr-Index bereits angepasst sind.
-	\item Aufruf: \texttt{./removeUpdates.sh}
+	\item Es handelt sich um ein ausführbares Bash-Skript, was parameterlos aufgerufen wird und alle bereits geladenen Updates der Verbünde im Verzeichnis \texttt{./data/core/updates} löscht, da Updates sehr groß werden können und auf Dauer nicht gespeichert werden sollen, da die Änderungen i.d.R. im Solr-Index bereits angepasst sind.
+	\item Aufruf: \texttt{\$ ./removeUpdates.sh}
 \end{itemize}
 
 \paragraph{\texttt{getResults.sh}}
 \label{sec:para:getResults}
 \begin{itemize}
-	\item Ausführbares Bash-Skript, was parameterlos die vordefinierten Filter im Verzeichnis \texttt{./etc/solrQuery.ini} auf den jeweiligen Solr-Core anwendet und die Ergebnisse in das Verzeichnes speichert, welches in \texttt{config.ini} unter der Variable \texttt{pathResults} angegeben wurde (default: \texttt{./results}).
-	\item Aufruf: \texttt{./getResults.sh}
+	\item Es handelt sich um ein ausführbares Bash-Skript, was parameterlos die vordefinierten Filter im Verzeichnis \texttt{./etc/solrQuery.ini} auf den jeweiligen Solr-Core anwendet und die Ergebnisse in das Verzeichnes speichert, welches in \texttt{config.ini} unter der Variable \texttt{pathResults} angegeben wurde (default: \texttt{./results}).
+	\item Aufruf: \texttt{\$ ./getResults.sh}
 \end{itemize}
 
 \begin{minipage}{\linewidth}
@@ -249,8 +261,8 @@ Diese Skripte befinden sich im Verzeichnis \texttt{./bin} und sind zu meist Alia
 \label{sec:para:startSshAgent}
 \begin{itemize}
 	%TODO: env Datei wird erstellt..
-	\item Ausführbares Bash-Skript, was parameterlos gerufen wird und dazu dient, den ssh-agent zu starten, sodass bei erstmaligem Aufruf nach Neustart, nach dem Private-Key-Passphrase gefragt wird. Es speichert die Umgebungsvariablen, die bei einer Public-Private-Key Authentifizierung notwendig sind in die Datei \texttt{./etc/env} ab, sodass für zukünftige Verbindungsanfragen kein Kennwort mehr eingegeben werden muss. Wichtig hierbei ist, dass cron-basierte Prozesse, die eine Public-Private-Key Authentifizierung zum Server benötigen (wie beispielsweise die Updates via SCP) nur automatisiert funktionieren, wenn zuvor dieses Skript ausgeführt wurde.
-	\item Aufruf: \texttt{./startSshAgent.sh} \\
+	\item Es handelt sich um ein ausführbares Bash-Skript, was parameterlos gerufen wird und dazu dient, den ssh-agent zu starten, sodass bei erstmaligem Aufruf nach Neustart, nach dem Private-Key-Passphrase gefragt wird. Es speichert die Umgebungsvariablen, die bei einer Public-Private-Key Authentifizierung notwendig sind in die Datei \texttt{./etc/env} ab, sodass für zukünftige Verbindungsanfragen kein Kennwort mehr eingegeben werden muss. Wichtig hierbei ist, dass cron-basierte Prozesse, die eine Public-Private-Key Authentifizierung zum Server benötigen (wie beispielsweise die Updates via SCP) nur automatisiert funktionieren, wenn zuvor dieses Skript ausgeführt wurde.
+	\item Aufruf: \texttt{\$ ./startSshAgent.sh} \\
 \end{itemize}
 \end{minipage}
 
@@ -266,39 +278,39 @@ Diese Skripte befinden sich im Verzeichnis \texttt{./bin} und sind zu meist Alia
 \end{itemize}
 
 \subsubsection{Software (derzeitig eingesetzte Versionen)}
+\label{sec:subsub:software}
 \begin{itemize}
 	\item Ubuntu 12.04 mit folgenden Zusatzmodulen
 	\begin{itemize}
 		\item curl
 		\item Oracle (Sun) Java
 	\end{itemize}
-	\item Apache Solr 4.8.1
+	\item Apache Solr 4.8.1 \footnote{\url{https://archive.apache.org/dist/lucene/solr/4.8.1/solr-4.8.1.tgz}}
 	\item SolrMarc SVN Revision r17461\footnote{\url{https://code.google.com/p/solrmarc/source/checkout}}
-	\item Perl 5.8.9 mit folgenden Modulen (nachinstallierbar via CPAN\footnote{\url{http://www.cpan.org/}})
+	\item Perl 5.14.2 mit folgenden Modulen (nachinstallierbar via CPAN\footnote{\url{http://www.cpan.org/}})
 	\begin{itemize}
 	%TODO: Kommandos sollten als Superuser ausgeführt werden..
 	%TODO: dazu muss packet make installiert sein (apt-get install make)
 	%TODO: cpan> install Bundle::CPAN
 		%TODO: apt-get install build-essential notwendig!
-		\item Apache::Solr %TODO: dazu werden wieder weitere Pakete benötigt:
-							%TODO: HTML::Entities,HTML::HeadParser,Unicode::GCString,String::Print,XML::LibXML,Log::Report::Optional,String::Print,LWP::UserAgent,Log::Report,XML::LibXML::Simple
+		\item Apache::Solr %needs: HTML::Entities,HTML::HeadParser,Unicode::GCString,String::Print,XML::LibXML,Log::Report::Optional,String::Print,LWP::UserAgent,Log::Report,XML::LibXML::Simple ==> fine
 		\item Archive::Extract	% fine 
-		\item Config::INI		% needs: Mixin::Linewise::Readers,Mixin::Linewise::Writers, PerlIO::utf8_strict
+		\item Config::INI		% needs: Mixin::Linewise::Readers,Mixin::Linewise::Writers, PerlIO::utf8_strict __> fine
 %		\item Data::Dumper 		% preinstalled
-		\item HTTP::OAI 		% needs: HTML::HeadParser,HTML::Entities, XML::LibXML,LWP::UserAgent,XML::LibXML::SAX
-		\item (JSON::Parse )	%
+		\item HTTP::OAI 		% needs: HTML::HeadParser,HTML::Entities, XML::LibXML --> apt-get install xml2 libxml2 zlib1g-dev, LWP::UserAgent,XML::LibXML::SAX ==> fine
+		\item (JSON::Parse )	% 
 		\item LWP::Simple 		% needs: HTML::HeadParser,HTML::Entities
-		\item LWP::UserAgent 	% needs: HTML::HeadParser,HTML::Entities
+		\item LWP::UserAgent 	% needs: HTML::HeadParser,HTML::Entities ==> up to date
 		\item MARC::Batch 		% fine
 		\item MARC::Field 		% up to date
 		\item MARC::File 		% up to date
 		\item Net::SCP 			% fine
 		\item Net::SSH 			% up to date
-		\item Sys::Info 		% needs: Sys::Info::Driver::Linux, Unix::Processors
+		\item Sys::Info 		% needs: Sys::Info::Driver::Linux - fine, Unix::Processors ==> fine
 		\item Text::Unidecode 	% fine
 		\item Time::Piece 		% up to date
 		\item Try::Tiny 		% fine
-		\item XML::Simple		% needs: XML::Parser, XML::SAX::Expat
+		\item XML::Simple		% needs: XML::Parser --> apt-get install expat libexpat1 libexpat1-dev, XML::SAX::Expat --> fine ==> fine
 	\end{itemize}
 \end{itemize}
 
@@ -401,7 +413,7 @@ Ausgehend vom Wurzelverzeichnis gibt es folgende Ordner und wichtige Unterverzei
 \paragraph{./etc/config.ini}
 \label{sec:para:config.ini}
 Es gibt verschiedene Arten von Konfigurationen. Im wesentlichen gibt es eine Hauptkonfigurationsdatei \texttt{./etc/config.ini} in der die jeweiligen Verbünde automatisch ein und ausgetragen werden, wenn ein neuer Core angelegt bzw. gelöscht wird. \\
-Alle Pfade in diesem Dokument können relativ oder absolut angegeben werden. Ist der Pfad absolut, d.h. beginnt dieser mit / wird der Pfad wie angegeben verwendet. Ist ein Pfad relativ, d.h. beginnt der Pfad mit einem Namen, wird der Pfad bis zum Hauptverzeichnis angenommen (Beispiel: das Projekt befindet sich im Ordner \texttt{/home/userX/workspace/fachkatalog/} und als Ergebnis-Pfad wurde \texttt{pathResults = results/} angegeben, dann wird dieser im verwendeten Skript erweitert zu \texttt{/home/fichte/workspace/fachkatalog/results/}. \\
+Alle Pfade in diesem Dokument können relativ oder absolut angegeben werden. Ist der Pfad absolut, d.h. beginnt dieser mit / wird der Pfad wie angegeben verwendet. Ist ein Pfad relativ, d.h. beginnt der Pfad mit einem Namen, wird der Pfad bis zum Hauptverzeichnis angenommen (Beispiel: das Projekt befindet sich im Ordner \texttt{/home/userX/workspace/solr-marc-filter/} und als Ergebnis-Pfad wurde \texttt{pathResults = results/} angegeben, dann wird dieser im verwendeten Skript erweitert zu \texttt{/home/fichte/workspace/solr-marc-filter/results/}. \\
 Weiterhin ist es wichtig, dass ein Pfad immer mit einem Slash (/) enden muss, da es sonst zu Fehlern durch Pfadkonkatenationen in den jeweiligen Skripten kommen kann. \\
 Folgende Parameter sind in der Konfigurationsdatei enthalten:
 
@@ -411,8 +423,7 @@ Folgende Parameter sind in der Konfigurationsdatei enthalten:
 	\multicolumn{3}{l}{(Core-unabhängig:)} \\ \hline
 	\textbf{Parameter} & \textbf{Beispiel} & \textbf{Erklärung} \\ \hline
 	
-	\texttt{pathToFachkatalogGlobal} & /home/userX/workspace/
-	fachkatalog/ & Globaler Pfad, in dem sich das Projekt befindet \\ \hline
+	\texttt{pathToFachkatalogGlobal} & /home/userX/workspace/solr-marc-filter/ & Globaler Pfad, in dem sich das Projekt befindet \\ \hline
 	
 	\texttt{pathIndexfile} & /home/userX/Downloads/
 	solrMarcSource/
@@ -519,7 +530,7 @@ Es handelt sich hier um eine von SolrMarc benötigte Core-spezifische Konfigurat
 \subsubsection{Basisdaten Indizierung}
 \label{sec:subsub:Basis}
 Nachdem zunächst ein neuer Core über das Skript \hyperref[sec:para:createCore]{\texttt{createCore.sh}} angelegt wurde, müssen anschließend die initialen Daten in das Core-spezifische Verzeichnis verschoben werden (siehe Abschnitt \ref{sec:verzeichnis}). Ist das erfolgt, sollte noch einmal geprüft werden, ob alle Parameter in den Basis-Konfigurationen gesetzt wurde und der Core korrekt angelegt wurde. \\
-Es können anschließend Daten mit dem Skript \texttt{buildIndex.sh} indiziert werden. Als Namenskonvention gilt, wie bei Updates und Löschungen im Index, dass alle initialen Daten als MARC oder MARC-XML Daten (\texttt{.mrc} oder \texttt{.xml}) vorliegen müssen, um von SolrMarc indiziert werden zu können. 
+Es können anschließend Daten mit dem Skript \hyperref[sec:para:buildIndex]{\texttt{buildIndex.sh}} indiziert werden. Als Namenskonvention gilt, wie bei Updates und Löschungen im Index, dass alle initialen Daten als MARC oder MARC-XML Daten (\texttt{.mrc} oder \texttt{.xml}) vorliegen müssen, um von SolrMarc indiziert werden zu können. 
 
 \subsubsection{Updates und Löschungen im Index}
 \label{sec:subsub:Updates}
@@ -684,32 +695,66 @@ Dieses Datei enthält die jeweiligen Filter-Anfragen zu den spezifischen Cores. 
 			query=(BCL_category:"17.28" OR SDNB_category:"33") AND 	keywords:"landeskunde"
 		\end{alltt}
 \end{itemize}
-Alle Ergebnisse werden standardmäßig unter \texttt{./results} als \texttt{filterName\_DatumTUhrzeitZ\_query.mrc} mit zusätzlichen Abfrageinformationen in einer gleichnamigen Textdatei abgelegt. 
+Alle Ergebnisse werden standardmäßig unter \texttt{results} als \texttt{filterName\_DatumTUhrzeitZ\_query.mrc} mit zusätzlichen Abfrageinformationen in einer gleichnamigen Textdatei abgelegt. 
 
 % % % % % % % % % % % % % % Einschränkungen
 \newpage
 \section{Workaround}
+\label{sec:workaround}
 Im Wesentlichen sind folgende Schritte durchzuführen: 
-\begin{itemize}
+\begin{enumerate}
+	\item Repository clonen
+	\item[] \texttt{\$ git clone https://github.com/UB-HU-Berlin/solr-marc-filter.git}
 	%TODO: prüfen ob diese Variablen wirklich angegeben werden müssen!
-	\item[0.] \hyperref[sec:para:config.ini]{\texttt{config.ini}} erstellen (dazu kann \texttt{config.ini.plain} kopiert werden) und genannte Pfad-Variablen anpassen
-	\item[1.] Solr Instanz starten (\texttt{java -jar -Xmx2048M -Xms512M start.jar})
-	\item[2.] neuen Solr-Core erstellen via \hyperref[sec:para:createCore]{\texttt{createCore.sh}} und Eingabeaufforderungen folgen
-	\item[3.] (optional) fehlerhaft oder testweise angelegten Solr-Core löschen via \hyperref[sec:para:removeCore]{\texttt{removeCore.sh}} und Eingabeaufforderungen folgen
-	\item[4.] Initialdaten in das automatisch angelegten Core-Verzeichnis \texttt{fachkatalog/data/coreX/initialData/} Marc- oder Marc-XML-Daten zum Befüllen des Cores hineinkopieren
-	\item[5.] in \hyperref[para:index.properties]{\texttt{index.properties}} festlegen welche Felder für diesen Core indiziert werden sollen und \texttt{"CHANGE\_THIS\_NAME"} in gewünschten Namen des Cores ändern (sinnvollerweise derselbe Name, wie beim Erstellen des Cores zuvor)
-	\item[6.] Daten im Solr-Core indizieren via \hyperref[sec:para:buildIndex]{\texttt{buildIndex.sh}}
-	\item[7.] (optional) in Vorbereitung auf Updates ssh-agent starten via \hyperref[sec:para:startSshAgent]{\texttt{startSshAgent.sh}}
-	\item[8.] (optional) alle alten Updates in Solr-Core einpflegen via \hyperref[sec:para:runUpdates]{\texttt{runUpdates.sh}}
-	\item[9.] (optional) Cron-Job für Auto-Updates einrichten, welcher regelmäßig (beispielsweise täglich um Mitternacht) das Skript \texttt{runUpdates.sh} startet
+	\item die unter Abschnitt \ref{sec:subsub:software} genannten CPAN Module installieren (dabei müssen jeweils auch alle Referenzmodule mit installiert, sowie benötigte Systempakete ggf. via apt-get nachinstalliert werden)
+	\begin{itemize}
+		\item prüfen, ob alle Module korrekt installiert wurden: 
+		\item[] \texttt{\$ perl -e ”use Apache::Solr; use Archive::Extract; use Config::INI; use HTTP::OAI; use LWP::Simple; use LWP::UserAgent; use MARC::Batch; use MARC::Field; use MARC::File; use Net::SCP; use Net::SSH; use Sys::Info; use Text::Unidecode; use Time::Piece; use Try::Tiny; use XML::Simple;" }
+		\item wird kein Fehler geworfen wie \texttt{Can't locate Module in @INC}, sind die Module korrekt installiert
+	\end{itemize}
+	\item Solr herunterladen (Link siehe Abschnitt \ref{sec:subsub:software})
+	\item zum Herunterladen und konfigurieren von SolrMarc \texttt{\$ ./prepareSolrMarc.sh} ausführen oder alternativ Schritte manuell durchführen:
+	\begin{enumerate}
+		\item SolrMarc SVN checkout im Überverzeichnis von solr-marc-filter ausführen
+		\item[] \texttt{\$ svn checkout http://solrmarc.googlecode.com/svn/trunk/ solrmarc}
+		
+		\item Ins Verzeichnis \texttt{solrmarc} wechseln, bauen und Eingabeaufforderungen folgen
+		\item[] \texttt{\$ ant init}
+		
+		\item SolrMarc.jar ins übergeordnete Verzeichnis kopieren
+		\item[] \texttt{\$ cp local\_build/lib/SolrMarc.jar local\_build}
+		
+		\item Ersetzung in Datei vornehmen 
+		\item[] \texttt{\$ sed -i 's/@MEM\_ARGS@/-Xmx256m/' local\_build/script\_templates/indexfile}
+		
+		\item Rechte zum Benutzen der Indizierungs-Skripte setzen
+		\item[] \texttt{\$ chmod u+x local\_build/script\_templates/*}
+		
+		\item Kopieren der Template Bash-Skripte in das SolrMarc Unterverzeichnis
+		\item[] \texttt{\$ cp -r ../solr-marc-filter/lib/templates/solrMarc/*.bsh local\_build/index\_scripts/}
+		
+		%TODO: wirklich fehlerhaft? was ist mit SolrMarc.jar
+		%TODO: ant ini durchführen lassen --> https://code.google.com/p/solrmarc/wiki/GettingStartedFromASourceDistribution
+	\end{enumerate}
+	\item \hyperref[sec:para:config.ini]{\texttt{config.ini}} erstellen (dazu kann \texttt{config.ini.plain} kopiert werden) und genannte Pfad-Variablen anpassen
+	\item Solr Instanz starten (\texttt{\$ java -jar -Xmx2048M -Xms512M start.jar})
+	\item neuen Solr-Core erstellen via \hyperref[sec:para:createCore]{\texttt{\$ ./createCore.sh}} und Eingabeaufforderungen folgen
+	\item (optional) fehlerhaft oder testweise angelegten Solr-Core löschen via \hyperref[sec:para:removeCore]{\texttt{\$ ./removeCore.sh}} und Eingabeaufforderungen folgen
+	\item Initialdaten (Marc- oder Marc-XML-Daten) in das automatisch angelegten Core-Verzeichnis \texttt{solr-marc-filter/data/coreX/initialData/} hineinkopieren
+	\item in \hyperref[para:index.properties]{\texttt{index.properties}} festlegen welche Felder für diesen Core indiziert werden sollen und \texttt{"CHANGE\_THIS\_NAME"} in gewünschten Namen des Cores ändern (sinnvollerweise derselbe Name, wie beim Erstellen des Cores zuvor)
+	%\item \texttt{indexfile}
+	\item Daten im Solr-Core indizieren via \hyperref[sec:para:buildIndex]{\texttt{\$ ./buildIndex.sh}}
+	\item (optional) in Vorbereitung auf Updates ssh-agent starten via \hyperref[sec:para:startSshAgent]{\texttt{\$ ./startSshAgent.sh}}
+	\item (optional) alle alten Updates in Solr-Core einpflegen via \hyperref[sec:para:runUpdates]{\texttt{\$ ./runUpdates.sh}}
+	\item (optional) Cron-Job für Auto-Updates einrichten, welcher regelmäßig (beispielsweise täglich um Mitternacht) das Skript \texttt{runUpdates.sh} startet
 	\begin{itemize}
 		\item Crontab öffnen: \texttt{\$ crontab -e}
-		\item folgende Zeile anfügen: \texttt{@midnight /CHANGE/THIS/PATH/fachkatalog/bin/runUpdates.sh}
+		\item folgende Zeile anfügen: \texttt{@midnight /CHANGE/THIS/PATH/solr-marc-filter/bin/runUpdates.sh}
 	\end{itemize}
-	\item[10.] neuen Filter-Regel erstellen in Datei \hyperref[sec:para:runUpdates]{\texttt{solrQuery.ini}} (dazu kann \texttt{solrQuery.ini.plain} kopiert werden)
-	\item[11.] Anfrage(n) an Solr-Core stellen via \hyperref[sec:para:getResults]{\texttt{getResults.sh}}
+	\item neuen Filter-Regel erstellen in Datei \hyperref[sec:para:runUpdates]{\texttt{solrQuery.ini}} (dazu kann \texttt{solrQuery.ini.plain} kopiert werden)
+	\item Anfrage(n) an Solr-Core stellen via \hyperref[sec:para:getResults]{\texttt{\$ ./getResults.sh}}
 	
-\end{itemize}
+\end{enumerate}
 
 %\subsection{title}
 

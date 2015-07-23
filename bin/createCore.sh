@@ -4,7 +4,7 @@ length=${#newCore}
 
 if [ $length -le 0 ]
    then
-      echo "Core not created! Forgot name of core?" 
+      echo "Forgot name of core?" 
       echo "./createCore.sh nameOfNewCore"
       exit -1
 fi
@@ -161,27 +161,28 @@ initial = data/$newCore/initialData/
 initialDataFormat = $initialDataFormat
 EOF
 
+# create data directory structure in solr-marc-filter
 mkdir ../data/$newCore
 mkdir ../data/$newCore/conf
 touch ../data/$newCore/conf/config.properties
-cp 	  ../lib/templates/solrMarc/index.properties ../data/$newCore/conf/
+cp 	  ../lib/templates/solrMarc/index.properties.plain ../data/$newCore/conf/index.properties
 mkdir ../data/$newCore/initialData
 mkdir ../data/$newCore/updates
 mkdir ../data/$newCore/updates/applied
 touch ../data/$newCore/updates/lastUpdates.txt
 
-
+# create directories in solr and copy all solr template files
 mkdir $pathToSolrCores$newCore
 mkdir $pathToSolrCores$newCore"/conf/"
 mkdir $pathToSolrCores$newCore"/data/"
-
 cp -r $pathToFachkatalogGlobal"/lib/templates/solr/." $pathToSolrCores$newCore"/conf/"
 
-#TODO vllt probleme mit Slash /
+#TODO: vllt probleme mit Slash /
 echo "curl \"${urlSolrDefault}admin/cores?action=CREATE&name=$newCore&instanceDir=$pathToSolrCores$newCore\""
 curl "${urlSolrDefault}admin/cores?action=CREATE&name=$newCore&instanceDir=$pathToSolrCores$newCore"
 
-customJarPath=$pathToSolrMarc"lib/solr_remote_only"
+customJarPath=$pathToSolrMarc"/lib/solr_remote_only"
+
 # fill the config.properties file with data
 FILE="../data/$newCore/conf/config.properties"
 /bin/cat <<EOF >>$FILE
