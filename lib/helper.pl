@@ -6,7 +6,7 @@ use strict;
 use Config::INI::Reader;
 use FindBin;
 
-## set logging policies
+## set logging policies (1 -> debug, 0 -> do not debug)
 my $log_debug 	= 1;
 my $log_info	= 1;
 my $log_system	= 1;
@@ -45,11 +45,12 @@ $ini_pathToSolrCoresDefault = $ini_pathToFachkatalogGlobal . $ini_pathToSolrCore
 
 
 # values .. just save value
-our $ini_responseTimeout = $configs->{'_'}->{'serverResponseTimeoutSec'};
-our $ini_resultType = $configs->{'_'}->{'resultType'};
-our $ini_resultsMaxRecordsPerFile = $configs->{'_'}->{'resultsMaxRecordsPerFile'};
-our $ini_resultsMaxNumber = $configs->{'_'}->{'resultsMaxNumber'};
-our $ini_urlSolrDefault = $configs->{'_'}->{'urlSolrDefault'};
+our $ini_responseTimeout 			= $configs->{'_'}->{'serverResponseTimeoutSec'};
+our $ini_resultType 				= $configs->{'_'}->{'resultType'};
+our $ini_resultsMaxRecordsPerFile 	= $configs->{'_'}->{'resultsMaxRecordsPerFile'};
+our $ini_resultsMaxNumber 			= $configs->{'_'}->{'resultsMaxNumber'};
+our $ini_urlSolrDefault 			= $configs->{'_'}->{'urlSolrDefault'};
+
 
 sub getTimeStr(){
 	my @time = localtime(time);

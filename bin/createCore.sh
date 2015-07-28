@@ -120,11 +120,11 @@ case "$updateType" in
 "ssh")	
 	echo "Choose SSH specific: ssh host"	
 	read sshHost
-	coreSpecificString="sshHost = $sshHost"
+	coreSpecificString="$coreSpecificString${NEWLINE}sshHost = $sshHost"
 	
 	echo "Choose SSH specific: ssh user"	
 	read sshUser
-	coreSpecificString="sshUser = $sshUser"
+	coreSpecificString="$coreSpecificString${NEWLINE}sshUser = $sshUser"
 		
 	echo "Choose SSH specific: ssh path to data"    
 	read sshDataPath
@@ -156,7 +156,7 @@ updateFormat =
 updateIsRunning = 0
 check = 1
 lastUpdate = 2014-01-01T12:00:00Z
-urlSolrCore = "$urlSolrDefault/$newCore"
+urlSolrCore = $urlSolrDefault/#/$newCore
 initial = data/$newCore/initialData/
 initialDataFormat = $initialDataFormat
 EOF

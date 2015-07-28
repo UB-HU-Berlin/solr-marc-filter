@@ -12,6 +12,7 @@ use FindBin;
 require "$FindBin::Bin/helper.pl";
 our $ini_pathToFachkatalogGlobal;
 our $ini_pathIndexfile;
+our $ini_pathConfigIni;
 
 my @results = ();
 my $configs = Config::INI::Reader->read_file("$FindBin::Bin/../etc/config.ini");

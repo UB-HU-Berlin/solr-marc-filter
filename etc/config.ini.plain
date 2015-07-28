@@ -1,4 +1,6 @@
-;; You MUST change the following variable-pathes before using one of the scripts
+;; You first must copy and rename this document to config.ini
+;; Then change the following variable-pathes before using one of the scripts
+;; Advice: never use quotes for any variable in this document
 pathToFachkatalogGlobal = /CHANGE/THIS/PATH/solr-marc-filter/
 pathIndexfile = /CHANGE/THIS/PATH/solrmarc/local_build/script_templates/indexfile
 pathToSolrCoresDefault = /CHANGE/THIS/PATH/solr/solr-4.X.X/example/solr/
@@ -28,7 +30,7 @@ resultType = mrc
 ;; updateIsRunning = 0
 ;; check = 1
 ;; lastUpdate = 2015-06-28T00:01:28Z
-;; urlSolrCore = http://127.0.0.1:8983/solr/gbv
+;; urlSolrCore = http://127.0.0.1:8983/solr/#/gbv
 ;; sshUser = user
 ;; sshHost = gbv
 ;; initial = data/gbv/initialData/

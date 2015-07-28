@@ -17,6 +17,7 @@ our $ini_resultsMaxNumber;
 our $ini_resultsMaxRecordsPerFile;
 our $ini_responseTimeout;
 our $ini_pathQuery;
+our $ini_urlSolrDefault;
 
 my $configs = Config::INI::Reader->read_file("$FindBin::Bin/../etc/config.ini");
 
@@ -27,30 +28,31 @@ $offset = 0 unless $offset;
 my @queries = keys %$queries;
 @queries = sort(@queries);
 
+# read all search queries
 foreach my $request(@queries){
 	my $query = $queries->{$request}->{'query'} if $queries->{$request}->{'query'};
 	$query = "" unless $query;
+	
+	# get the core-names where we have to do the search
 	my @verbuendeToSearch = split(",", $queries->{$request}->{'verbund'}) if $queries->{$request}->{'verbund'};
-		
+	
 	&logMessage("WARNING", "no query in $request found .. skipping!") unless $query;
 	next unless $query;
 	
 	my $dateTime = &getTimeStr();
 	
-	my @verbuendeAll = keys %$configs;
-	
 	foreach my $verbund(@verbuendeToSearch){
-		my $url = $configs->{$verbund}->{'urlSolrCore'}."/select?";
+		next if $verbund eq "_";
+		$verbund =~ s/\"//g;
+		
+		my $url = $ini_urlSolrDefault . "$verbund/select?";
+		
+		print $verbund . "\n";
+		print $ini_urlSolrDefault . "\n";
+		
 		my $base;
-#		foreach my $verbund(@verbuendeAll){
-#			if(not $verbund eq '_'){
-#				$url .= "$configs->{$verbund}->{'IP'},";
-#				$base = "$configs->{$verbund}->{'IP'}/select?shards=" if not $base;
-#			}
-#		}
-#		$url = $base.$url;
 		$url.= "q=$query";
-		#$url.= "&wt=json";	# use json instead of xml because of overhead
+		#$url.= "&wt=json";			#TODO: use json instead of xml because of overhead
 		
 		my $rows = 100;
 		my $start = 0 + $offset;
@@ -76,9 +78,7 @@ foreach my $request(@queries){
 			&logMessage("ERROR", "Query $request was possible invalid") if not $content;
 			next if not $content;
 			
-			#TODO: use json
 			#my $jsonRef = parse_json ($content->{_content});
-			#my $xmlRef = $jsonRef;
 			my $xmlRef = XMLin($content->{_content});
 			
 			my $resultNumber = $xmlRef->{'result'}->{'numFound'};
