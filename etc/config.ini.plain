@@ -9,6 +9,7 @@ pathToSolrMarcDefault = /CHANGE/THIS/PATH/solrmarc/local_build/
 ;; Standard values
 pathLogFile = log/log.txt
 pathLogFileAlternative = log/log_rest.txt
+;; urlSolrDefault must have format http://IP:PORT/solr/
 urlSolrDefault = http://127.0.0.1:8983/solr/
 resultsMaxRecordsPerFile = 10000
 resultsMaxNumber = 0

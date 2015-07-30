@@ -43,7 +43,7 @@ sub updateDelete(@){
 			
 			my $solr = Apache::Solr->new(server => $ini_urlSolrDefault);
 			
-			&logMessage("INFO", "Applying updates to $verbund ..");
+			&logMessage("INFO", "($verbund) Applying updates to $verbund ..");
 			
 			# get and check if the path is relative or global
 			my $dirDel = $configs->{$verbund}->{'updates'};
@@ -76,7 +76,9 @@ sub updateDelete(@){
 			my @filesWithUpd = ();
 			
 			while(my $file = readdir(DIR_UPD)){
-				if ($file =~ m/\.$configs->{$verbund}->{updateFormat}$/){
+				my $updateFormat = $configs->{$verbund}->{updateFormat};
+				
+				if ($file =~ m/\.$updateFormat$/){
 					push(@filesWithUpd, $file);
 				}
 			}
@@ -110,20 +112,22 @@ sub updateDelete(@){
 				
 				substr($a, $positionFromA, $dateLength) cmp substr($b, $positionFromB, $dateLength)  
 			} @mixedList;
-						
+			
 			for my $updateOrDeletion(@mixedListSorted){
-
+				
+				print "updateOrDeletion: $updateOrDeletion\n";
+				
 				# apply deletions and move the deletions afterwords to applied
 				if($updateOrDeletion =~ /delete/){
 
 					&logMessage("INFO", "($verbund) Applying deletions from file $updateOrDeletion to solr index ..");
 					&logMessage("SYS", "($verbund) echo -e '\x04' | $ini_pathIndexfile $dirDel$updateOrDeletion $configProperties 2 > $ini_pathLogFileAlternative >/dev/null");
 					system("echo -e '\x04' | $ini_pathIndexfile $dirDel$updateOrDeletion $configProperties 2 > $ini_pathLogFileAlternative >/dev/null");
-						
+					
 					# echo -e '\x04' | .. 
 					# 	this sends an end of transmission control char 
 					#	prevents the $indexFile to read data from stdin (maybe better solution)
-						
+					
 					&logMessage("INFO", "($verbund) moving file $dirDel$updateOrDeletion to ./applied/");
 					system("mv $dirDel$updateOrDeletion $dirDel"."applied/");
 					&logMessage("INFO", "($verbund) update $updateOrDeletion applied ..");
@@ -133,7 +137,7 @@ sub updateDelete(@){
 				elsif($updateOrDeletion =~ /update/){
 					&logMessage("INFO", "($verbund) Applying updates from file $updateOrDeletion to solr index ..");
 					&logMessage("SYS", "($verbund) $ini_pathIndexfile $dirUpd$updateOrDeletion $configProperties 2>>$ini_pathLogFileAlternative >/dev/null");
-							
+					
 					system("$ini_pathIndexfile $dirUpd$updateOrDeletion $configProperties 2>>$ini_pathLogFileAlternative >/dev/null");
 					&logMessage("INFO", "($verbund) moving update file $dirUpd$updateOrDeletion to ./applied/");
 					system("mv $dirUpd$updateOrDeletion $dirUpd"."applied/");
@@ -155,3 +159,4 @@ if($ARGV[0]){
 	&updateDelete($ARGV[0]);
 }
 1;
+#&updateDelete("newCore");
