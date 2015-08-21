@@ -66,7 +66,6 @@ sub updateDelete(@){
 			}
 			
 			@filesWithIDs = sort @filesWithIDs;
-			#print "@filesWithIDs\n";
 			
 			# get and check if the path is relative or global
 			my $dirUpd = $configs->{$verbund}->{'updates'};
@@ -115,8 +114,6 @@ sub updateDelete(@){
 			
 			for my $updateOrDeletion(@mixedListSorted){
 				
-				print "updateOrDeletion: $updateOrDeletion\n";
-				
 				# apply deletions and move the deletions afterwords to applied
 				if($updateOrDeletion =~ /delete/){
 
@@ -159,4 +156,3 @@ if($ARGV[0]){
 	&updateDelete($ARGV[0]);
 }
 1;
-#&updateDelete("newCore");

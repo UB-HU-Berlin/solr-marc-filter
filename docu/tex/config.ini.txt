@@ -13,7 +13,7 @@ pathResults = results/
 resultType = mrc
 
 [swb]
-updateType = ftp
+updateType = http
 indexPropertiesFile = data/swb/conf/index.properties
 configPropertiesFile = data/swb/conf/config.properties
 updateIntervalInDays = 14
@@ -24,5 +24,5 @@ updateFormat = xml
 urlSolrCore = http://127.0.0.1:8983/solr/swb
 check = 1
 lastUpdate = 2014-11-07T12:39:42Z
-ftpUrl = http://swblod.bsz-bw.de/od/
+httpUrl = http://swblod.bsz-bw.de/od/
 initial = data/swb/initialData/

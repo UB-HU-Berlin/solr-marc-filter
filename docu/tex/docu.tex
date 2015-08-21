@@ -164,8 +164,9 @@ Die Indizierung der MARC-Daten erfolgt über die Java-Bibliothek SolrMarc. Diese
 Da alle versuchten SolrMarc-Versionen nicht mit aktuellen Apache Solr Versionen kompatibel sind, erfolgt die Indizierung nur über die REST-Schnittstelle von Solr. Sollte sich dieses Verhalten von SolrMarc ändern, wäre es auch möglich den Index über die Hadoop-Container von Solr zu schreiben, was das Indizieren stark beschleunigen würde.
 
 \paragraph{BeanShell-Erweiterungen}
-Bei den Skripten handelt es sich um Erweiterungen, die es ermöglichen, die in den Marc-Daten enthaltenen Daten für das Indizieren vorzubereiten. D.h. es werden spezifische Marc-Felder voruntersucht und in spezielle Solr-Felder exportiert. Aufgerufen werden die Skripte via \nameref{para:index.properties}. \\ %./data/core/conf/index.properties
-Die Skripte sind in Java-Code geschrieben und werden im folgenden erklärt.
+\label{para:beanShell}
+Bei den Skripten handelt es sich um Erweiterungen, die es ermöglichen, die in den Marc-Daten enthaltenen Daten für das Indizieren vorzubereiten. D.h. es werden spezifische Marc-Felder voruntersucht und in spezielle Solr-Felder exportiert. Verwendet werden die Skripte in \nameref{para:index.properties}. \\ %./data/core/conf/index.properties
+Der Ordner \texttt{index\_scripts} in dem sich die Skripte befinden müssen, liegt im SolrMarc Unterverzeichnis \texttt{local\_build}. Die Skripte sind in Java-Code geschrieben und werden im Folgenden erklärt.
 
 \subparagraph{getCategory.bsh} 
 Mit dem Skript ist es möglich die entsprechenden Klassifikationen aus den Marc-Datensätzen zu extrahieren. In Marc-Datensätzen befinden sich die Klassifikationen im Feld 084 mit den entsprechenden Unterfeldern. Würde man nur diese Felder in Solr via SolrMarc (ohne getCategory.bsh) indizieren, wäre es nicht mehr möglich, die jeweiligen Klassifikationen zu den Klassifikationsnummern zuzuordnen, da es sehr viele verschiedene Klassifikationen\footnote{\url{http://www.loc.gov/standards/sourcelist/classification.html}} gibt und sich diese teils ähneln (beispielsweise kann es eine Klassifikation BCL 18.00 geben und SDNB 18). \\
@@ -359,7 +360,7 @@ Ausgehend vom Wurzelverzeichnis gibt es folgende Ordner und wichtige Unterverzei
 		\begin{itemize}
 			\item[] \texttt{./data/core/updates/lastUpdates.txt}	
 			\begin{itemize}
-				\item enthält abhängig von der Update API entweder den letzten Zeitstempel des korrekten Updates (bei OAI) oder die Dateinamen von den bereits durchgeführten Updates (bei FTP/SCP)
+				\item enthält abhängig von der Update API entweder den letzten Zeitstempel des korrekten Updates (bei OAI) oder die Dateinamen von den bereits durchgeführten Updates (bei HTTP- und SCP-Updates)
 				\item sollte nicht verändert werden
 			\end{itemize}					
 		\end{itemize}
@@ -444,16 +445,15 @@ Folgende Parameter sind in der Konfigurationsdatei enthalten:
 		
 	\texttt{serverResponseTimeoutSec} & 1800 & Solr-Anfrage Timeout: wenn der Server in diese Zeit nicht auf die Anfrage reagiert, wird ein Fehler ausgegeben \\ \hline
 	
-	%TODO: FEHLER!?
-	\texttt{pathResults} & etc/solrQuery.ini & Pfad, in denen die Ergebnisse der Filter-Anfragen gespeichert werden. \\ \hline
+	\texttt{pathResults} & results & Pfad, in denen die Ergebnisse der Filter-Anfragen gespeichert werden (kann in einen beliebigen Pfad geändert werden). \\ \hline
 	
-	\texttt{resultType} & mrc & Gibt an in welchem Format die Ergebnisse zurückgebeben werden sollen (xml oder mrc möglich) \\ \hline
+	\texttt{resultType} & mrc & Gibt an in welchem Format die Ergebnisse zurückgebeben werden sollen (\texttt{xml} oder \texttt{mrc} möglich) \\ \hline
 	
 	
 	\multicolumn{3}{l}{(Core-spezifisch:)} \\ \hline
 	\textbf{Parameter} & \textbf{Beispiel} & \textbf{Erklärung} \\ \hline
-	
-	\texttt{updateType} & ftp & Einer von drei möglichen Update Varianten \\ \hline
+
+	\texttt{updateType} & http & einer von drei möglichen Update Varianten (\texttt{http, ssh, oai}) \\ \hline
 	
 	\texttt{indexPropertiesFile} & data/swb/conf/index.properties & Pfadangabe zur Konfigurationsdatei; sollte nicht verändert werden \\ \hline
 	
@@ -463,15 +463,15 @@ Folgende Parameter sind in der Konfigurationsdatei enthalten:
 
 	\texttt{updates} & data/swb/updates/ & Pfad in dem die Updates gespeichert werden; sollte nicht verändert werden \\ \hline
 	
-	\texttt{initialDataFormat} & xml & Formatangabe der Initialdaten \\ \hline
+	\texttt{initialDataFormat} & xml & Formatangabe der Initialdaten (\texttt{xml} oder \texttt{mrc} möglich) \\ \hline
 	
 	\texttt{updateIsRunning} & 0 & Lock-Flag, damit bei lang andauernden Updates nicht mehrmals dasselbe Update gerufen wird. Ist der Parameter 1, wird gerade nach Updates gesucht bzw. geladen und dadurch dieser Core gesperrt. Bei 0 ist er freigegeben. \\ \hline
 	
-	\texttt{updateFormat} & xml & Format in dem die Updates zur Verfügung gestellt werden \\ \hline
+	\texttt{updateFormat} & xml & Format in dem die Updates zur Verfügung gestellt werden (\texttt{xml} oder \texttt{mrc} möglich) \\ \hline
 	
 	\texttt{urlSolrCore} & http://127.0.0.1:8983/solr/\#/swb & URL unter der der spezifische Core zu erreichen ist \\ \hline
 	
-	\texttt{check} & 0 & Flag, der angibt, ob der jeweilige Core geupdatet werden soll oder nicht. Ist der Wert 1, wird bei den automatischen Updates danach gesucht, andernfalls nicht. \\ \hline
+	\texttt{check} & 0 & Gibt an, ob der jeweilige Core geupdatet werden soll (\texttt{1}) oder nicht (\texttt{0}). \\ \hline
 	
 	\texttt{lastUpdate} & 2014-11-07T12:39:42Z & Zeitpunkt des letzten durchgeführten Updates.  \\ \hline
 	
@@ -479,22 +479,23 @@ Folgende Parameter sind in der Konfigurationsdatei enthalten:
 	
 	
 	%\textbf{Parameter} & \textbf{Beispiel} & \textbf{Erklärung} \\ \hline
-	\multicolumn{3}{l}{(FTP-spezifisch:)} \\ \hline
+	\multicolumn{3}{l}{(HTTP-spezifisch:)} \\ \hline
 	
-	\texttt{ftpUrl} & http://swblod.bsz-bw.de/od/ & CCC \\ \hline
+	\texttt{httpUrl} & http://swblod.bsz-bw.de/od/ & URL unter der die Updates ohne Zugangsbeschränkung oder weitere URL-Parameter erreicht und heruntergeladen werden können (Updates liegen in einem gepackten Format vor). \\ \hline
 	
-	
+	\newpage
 	\multicolumn{3}{l}{(OAI-spezifisch:)} \\ \hline
 	
-	\texttt{oaiUrl} & http://bvbr.bib-bvb.de:8991/aleph-cgi/
-	oai/oai\_opendata.pl & URL unter der die OAI-Updates ohne Zugangsbeschränkung erreicht werden können. \\ \hline
+	\texttt{oaiUrl} & http://bvbr.bib-bvb.de:8991/ aleph-cgi/oai/oai\_opendata.pl & URL unter der die OAI-Updates ohne Zugangsbeschränkung erreicht werden können (die \texttt{oaiUrl} ist im Grunde auch eine http-Webadresse, hinter der sich aber eine OAI-Schnittstelle befindet) \\ \hline
 	
 
 	\multicolumn{3}{l}{(SCP-spezifisch:)} \\ \hline
 	
-	\texttt{sshDataPath} & /home/huberlin/gbv-daten/ & Pfad auf dem Server \\ \hline
+	\texttt{sshDataPath} & /home/user/opendata/ & Pfad auf dem Server, der zu dem Verzeichnis mit den kompletten Updates führt, die dort auch immer regelmäßig neu eingespielt werden \\ \hline
 	
-	\texttt{sshHost} & kobv & Server-Adresse auch als ssh Kürzel möglich (muss in ~.ssh/config eingetragen sein) \\ \hline
+	\texttt{sshUser} & user & Benutzername, der Zugriff auf den entfernten Server besitzt \\ \hline
+		
+	\texttt{sshHost} & kobv & IP-Adresse des Servers oder ssh Kürzel (bei Kürzel muss dieser in ~.ssh/config eingetragen sein) \\ \hline
 	
 	
 \end{longtable}
@@ -510,20 +511,18 @@ Folgende Parameter sind in der Konfigurationsdatei enthalten:
 	breaklines=true
 }
 \textbf{Konfigurationsbeispiel \texttt{config.ini}} \\
-(Dies dient nicht als Konfigurationsvorlage sondern nur als Beispiel, da die nicht-globalen Einträge für jeden Core über das Skript zum Erstellen von Cores automatisch erstellt werden.)
+(Dies dient nicht als Konfigurationsvorlage sondern nur als Beispiel, da die nicht-globalen Einträge für jeden Core über das Skript zum Erstellen von Cores automatisch angelegt werden.)
 \lstinputlisting{config.ini.txt}
 
 
 \paragraph{./data/core/conf/config.properties}
 Es handelt sich hier um eine von SolrMarc benötigte Core-spezifische Konfigurationsdatei, in der u.a. Pfade, die Solr-URL und das Format angegeben sind. Diese Datei wird automatisch beim Anlegen des dazugehörigen Cores erstellt und muss i.d.R. nicht nachträglich verändert werden. \\ \\
-
 \textbf{Konfigurationsbeispiel \texttt{config.properties}} 
 \lstinputlisting{config.properties.txt}
 
 \paragraph{./data/core/conf/index.properties}
 \label{para:index.properties}
-Es handelt sich hier um eine von SolrMarc benötigte Core-spezifische Konfigurationsdatei, in der aufgelistet wird, welche Felder der Marc-Datensätze indiziert werden sollen. Dabei können die von SolrMarc bereitgestellten Methoden, wie z.B. \texttt{getAllAlphaSubfields} und \texttt{FullRecordAsMARC}, aber auch die eigens angefertigten BeanShell-Erweiterungen verwendet werden. Hierbei ist zu beachten: es können immer nur solche Felder indiziert werden, die auch in dem Solr-Schema definiert sind. 
-
+Es handelt sich hier um eine von SolrMarc benötigte Core-spezifische Konfigurationsdatei, in der aufgelistet wird, welche Felder der Marc-Datensätze indiziert werden sollen. Dabei können die von SolrMarc bereitgestellten Methoden, wie z.B. \texttt{getAllAlphaSubfields} und \texttt{FullRecordAsMARC} aber auch die eigens angefertigten BeanShell-Erweiterungen verwendet werden. Hierbei ist zu beachten: es können immer nur solche Felderindiziert werden, die bekannte Funktionen verwenden und die auch in dem Solr-Schema definiert sind. Im folgenden Konfigurationsbeispiel müssen also die Skripte \texttt{getCategory.bsh} und \texttt{topicFacet.bsh} existieren (siehe \hyperref[para:beanShell]{BeanShell-Erweiterungen}). \\ \\
 \textbf{Konfigurationsbeispiel \texttt{index.properties}} 
 \lstinputlisting{index.properties.txt}
 
@@ -539,11 +538,11 @@ Updates sind Aktualisierungsdateien, die in regelmäßigen Abständen von den en
 \begin{itemize}
 	\item Lösch-Updates: \\
 		Die Dateien enthalten in der Regel immer nur die Identifikatoren (IDs) der Datensätze, die gelöscht werden sollen, wobei pro Zeile genau eine ID gelistet wird. Bei OAI Schnittstellen können Lösch-Updates und Daten-Updates in derselben Ergebnismenge liegen. \\
-		Namenskonvention (bei SCP und FTP): \\
+		Namenskonvention (bei SCP und HTTP): \\
 		\texttt{file.del} (z.B. \texttt{gbv-catalog-delete-2015-02-01.del})
 	\item Daten-Updates: \\
 		Die Dateien enthalten die eigentlichen neuen oder überarbeiteten Meta-Informationen. \\
-		Namenskonvention (bei SCP und FTP):\\
+		Namenskonvention (bei SCP und HTTP):\\
 		\texttt{file.xml} oder \texttt{file.mrc} (z.B. \texttt{gbv-catalog-update-2015-02-01\_1of4.mrc})
 \end{itemize}
 
@@ -559,8 +558,8 @@ Die Updates der jeweiligen Cores werden abhängig von ihrem jeweiligen Quellen u
 	%TODO: Cronjob beschreiben
 	%TODO: 
 		Ist eine simple Konfigurations-Variante, die es automatisiert ermöglicht per Secure Copy die bereitgestellten Updates vom Server auf den lokalen Rechner zu kopieren. Damit dieses Verfahren automatisch funktioniert (z.B. per Cronjob), muss die Verbindung zum entsprechenden Server per Public-Private-Key Authentifizierung vollzogen werden. Dazu muss der entsprechende Private-Key mit Hilfe des Skriptes \hyperref[sec:para:startSshAgent]{\texttt{startSshAgent.sh}} entschlüsselt werden.
-	\item FTP \\
-		Ist eine simple Konfigurations-Variante, die es automatisiert ermöglicht, angebotene Updates die sich auf dem jeweiligen Verbundsserver befinden herunterzuladen.
+	\item HTTP \\
+		Ist eine simple Konfigurations-Variante, die es automatisiert ermöglicht, angebotene öffentliche Updates, die sich auf dem jeweiligen Verbundsserver unter einer bestimmten URL befinden, herunterzuladen.
 \end{itemize}
 
 \subsubsection{Solr-Schema}
@@ -766,8 +765,8 @@ Im Wesentlichen sind folgende Schritte durchzuführen:
 \begin{itemize}
 	\item Indizierung
 	\begin{itemize}
-		\item Indizierung (sowohl initial als auch Updates) nur von Metadaten die im MARC-XML oder MARC-Format vorliegen (momentan keine Unterstützung von RDF-Daten)
-		\item nur per REST Schnittstelle, d.h. die Indizierung kann relativ viel Zeit in Anspruch nehmen, da Daten nicht direkt in Index abgelegt werden
+		\item Indizierung (sowohl initial als auch Updates) nur von Metadaten, die im MARC-XML oder MARC-Format vorliegen (momentan keine Unterstützung von RDF-Daten)
+		\item Indizierung nur per REST Schnittstelle, d.h. die Indizierung kann relativ viel Zeit in Anspruch nehmen, da Daten nicht direkt im Index abgelegt werden
 	\end{itemize}
 	
 %	\item Updates
@@ -780,7 +779,8 @@ Im Wesentlichen sind folgende Schritte durchzuführen:
 	\begin{itemize}
 		\item nur auf Ubuntu getestet
 		\item möglicherweise Pfadprobleme etc. unter Windows
-		\item Updates via OAI und FTP nur im geringen Umfang getestet
+		\item Updates via SCP ausführlich getestet
+		\item Updates via OAI und HTTP nur im geringen Umfang getestet
 	\end{itemize}
 	
 	\item Abfragen
@@ -788,7 +788,7 @@ Im Wesentlichen sind folgende Schritte durchzuführen:
 		\item nur auf Basis des Indizierungsschemas %TODO: was damit sematisch gemeint
 		\item keine nachträgliche Änderung des Index-Schemas ohne vollständige Neuindizierung (Hinzufügen von sinnvoller Auswahl an dynamischen Feldern notwendig)
 		\item Beschränkungen durch Inhalte der Marc-Daten (z.B. kann nicht allgemein nach Erscheinungsjahr gesucht werden, wenn kein einheitliches Format umgesetzt wird)
-		\item keine Anfragen über alle Cores (z.B. via shards, da dies zu lange Response Zeiten verursachen)
+		\item keine Anfragen über alle Cores (z.B. via shards, da dies zu lange Response-Zeiten verursachen)
 		
 	\end{itemize}
 \end{itemize}

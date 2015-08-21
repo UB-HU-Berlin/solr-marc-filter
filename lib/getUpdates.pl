@@ -62,12 +62,12 @@ sub getUpdates(@){
 			open($inOut, ">> $path"."lastUpdates.txt") or die("ERROR: Could not open lastUpdates file of $verbund: $!, $path");
 		}
 		
-		## FTP
-		if($configs->{$verbund}->{'updateType'} eq "ftp"){
+		## HTTP
+		if($configs->{$verbund}->{'updateType'} eq "http"){
 			$configs->{$verbund}->{updateIsRunning} = 1;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
 			
-			my $updateURL = $configs->{$verbund}->{'ftpUrl'};
+			my $updateURL = $configs->{$verbund}->{'httpUrl'};
 			
 			my $ua = LWP::UserAgent->new();
 			my $response = $ua->get($updateURL);
@@ -79,6 +79,7 @@ sub getUpdates(@){
 				
 				my @allUpdateNames;
 				
+				# check for special verbund
 				if($verbund eq 'swb'){
 					while($content =~ /<a href="(od-up_bsz-tit_\d{6}_\d{2}\.xml\.tar\.gz)">/g){
 						push(@allUpdateNames, $1);
@@ -170,7 +171,7 @@ sub getUpdates(@){
 			$ENV{"SSH_AUTH_SOCK"} = $SSH_AUTH_SOCK;
 			
 			my $cmd = "ls $pathToSshData";
-			sshopen2("$user\@"."$host", *READER, *WRITER, "$cmd") || die  &logMessage("ERROR", "($verbund) sshError: $!");	#TODO: check if correct
+			sshopen2("$user\@"."$host", *READER, *WRITER, "$cmd") || die  &logMessage("ERROR", "($verbund) sshError: $!");
 			
 			#TODO: make it independet from 'gbv'!
 			&logMessage("WARNING", "($verbund) all files in target sshDataPath will be added!") if not $verbund eq 'gbv';

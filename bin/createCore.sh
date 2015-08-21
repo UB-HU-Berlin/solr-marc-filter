@@ -58,12 +58,12 @@ do
    read initialDataFormat
 done
 
-echo "Choose update type (oai|ssh|ftp): "
+echo "Choose update type (oai|ssh|http): "
 read updateType
 
-while [ "$updateType" != "oai" ] && [ "$updateType" != "ssh" ] && [ "$updateType" != "ftp" ]
+while [ "$updateType" != "oai" ] && [ "$updateType" != "ssh" ] && [ "$updateType" != "http" ]
 do
-   echo "Choose update type (oai|ssh|ftp): "
+   echo "Choose update type (oai|ssh|http): "
    read updateType
 done
 
@@ -131,10 +131,10 @@ case "$updateType" in
 	coreSpecificString="$coreSpecificString${NEWLINE}sshDataPath = $sshDataPath"
 	;;
 
-"ftp")	
-	echo "Choose FTP specific: url to data"
-    read ftpUrl
-    coreSpecificString="ftpUrl = $ftpUrl"
+"http")	
+	echo "Choose HTTP specific: url to data"
+    read httpUrl
+    coreSpecificString="httpUrl = $httpUrl"
 	;;
 
 *)	;;
