@@ -1,0 +1,7 @@
+v1.0.1
+- additional HTTP parameter for deletions and applied in scripts
+- Testings for HTTP-Updates with SWB
+- changes in documentation
+
+v1.0.0
+- first release
