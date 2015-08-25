@@ -68,35 +68,44 @@ sub getUpdates(@){
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
 			
 			my $updateURL = $configs->{$verbund}->{'httpUrl'};
+			my $deletionURL = $configs->{$verbund}->{'httpUrlDeletions'};
 			
 			my $ua = LWP::UserAgent->new();
-			my $response = $ua->get($updateURL);
+			my $responseUpd = $ua->get($updateURL);
+			my $responseDel = $ua->get($deletionURL);
 			
-			if($response->is_success){
-				my $debug = 1;
-				# parse the names of the hypelinks to get to the content of the updates (or deletions)
-				my $content = $response->content();
+			if($responseUpd->is_success && $responseDel->is_success){
+				# parse the names of the hypelinks to get to the content of the updates and deletions
+				my $contentUpd = $responseUpd->content();
+				my $contentDel = $responseDel->content();
 				
-				my @allUpdateNames;
+				my @allUpdateFiles;
 				
-				# check for special verbund
+				# handle different Cores different
 				if($verbund eq 'swb'){
-					while($content =~ /<a href="(od-up_bsz-tit_\d{6}_\d{2}\.xml\.tar\.gz)">/g){
-						push(@allUpdateNames, $1);
-						#print "$1\n";
+					while($contentUpd =~ /<a href="(od-up_bsz-tit_\d{6}_\d{1,2}\.xml\.tar\.gz)">/g){
+						push(@allUpdateFiles, $1);
+					}
+					while($contentDel =~ /<a href="(od_del_bsz-tit_\d{6}_\d{2}\.txt\.tar\.gz)">/g){
+						push(@allUpdateFiles, $1);
 					}
 				}
 				else{
-					while($content =~ /.+\.tar\.gz/){
-						&logMessage("WARNING", "($verbund) all .tar.gz files in target updateURL will be added!");
-						push(@allUpdateNames, $1);
+					while($contentUpd =~ /^.+\.(txt|mrc|xml|tar|tar\.gz)$/g){
+						&logMessage("WARNING", "($verbund) all files in target updateURL will be added!");
+						push(@allUpdateFiles, $1);
+					}
+					while($contentDel =~ /^.+\.(txt|mrc|xml|tar|tar\.gz)$/g){
+						&logMessage("WARNING", "($verbund) all files in target updateURLDeletions will be added!");
+						push(@allUpdateFiles, $1);
 					}
 				}
-				@allUpdateNames = sort(@allUpdateNames);
-				
+				@allUpdateFiles = uniq(@allUpdateFiles);
+				@allUpdateFiles = sort(@allUpdateFiles);
+								
 				# get the difference of AllUpdates-LastUpdates=LatestUpdates
 				my %lastUp = map {$_ => 1} @lastUpdates;
-				my @updates = grep {not $lastUp{$_}} @allUpdateNames;
+				my @updates = grep {not $lastUp{$_}} @allUpdateFiles;
 				my $now = &getTimeStr();
 				
 				if(@updates){
@@ -114,7 +123,8 @@ sub getUpdates(@){
 				foreach my $fileName(@updates){
 					my $latestUpdate = $fileName;
 					&logMessage("INFO", "($verbund) downloading $fileName ..");
-					getstore($updateURL.$fileName, $pathToUpdates.$fileName) or die "Could not download $fileName from $updateURL";
+					getstore($updateURL.$fileName, $pathToUpdates.$fileName) or die "Could not download $fileName from $updateURL" if $fileName =~ /$updateFormat/;
+					getstore($deletionURL.$fileName, $pathToUpdates.$fileName) or die "Could not download $fileName from $updateURL" if $fileName =~ /txt/;
 					print $inOut "$fileName\n";
 				}
 				
@@ -134,7 +144,8 @@ sub getUpdates(@){
 				}
 			}
 			else{
-				&logMessage("ERROR", "($verbund) an error occured! " . $response->status_line);
+				&logMessage("ERROR", "($verbund) an error occured! " . $responseUpd->status_line . "; " . $responseDel->status_line);
+				
 			}
 			$configs->{$verbund}->{updateIsRunning} = 0;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
@@ -146,7 +157,7 @@ sub getUpdates(@){
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
 			
 			# get the updates and deletions via scp
-			my @allUpdateNames;	#TODO: rename to allUpdatesFiles
+			my @allUpdateFiles;
 			my $host = $configs->{$verbund}->{'sshHost'};
 			my $user = $configs->{$verbund}->{'sshUser'};
 			my $pathToSshData = $configs->{$verbund}->{'sshDataPath'};
@@ -166,6 +177,7 @@ sub getUpdates(@){
 					$SSH_AUTH_SOCK = $1;
 				}
 			}
+			
 			# setting important SSH Env Vars 
 			$ENV{"SSH_AGENT_PID"} = $SSH_AGENT_PID;
 			$ENV{"SSH_AUTH_SOCK"} = $SSH_AUTH_SOCK;
@@ -173,7 +185,6 @@ sub getUpdates(@){
 			my $cmd = "ls $pathToSshData";
 			sshopen2("$user\@"."$host", *READER, *WRITER, "$cmd") || die  &logMessage("ERROR", "($verbund) sshError: $!");
 			
-			#TODO: make it independet from 'gbv'!
 			&logMessage("WARNING", "($verbund) all files in target sshDataPath will be added!") if not $verbund eq 'gbv';
 			
 			while (<READER>) {
@@ -190,22 +201,22 @@ sub getUpdates(@){
 				#TODO: very specific for 'gbv' -> make more independent
 				if($verbund eq 'gbv'){
 					if($_ =~ /^gbv.+delete.+\.txt$/ or $_ =~ /^gbv.+update.+\.mrc\.tar\.gz$/){
-				    	push(@allUpdateNames, $_);
+				    	push(@allUpdateFiles, $_);
 					}
 				}
 				else{
 					$_ =~ /^.+\.(txt|mrc|xml|tar|tar\.gz)$/;
-					push(@allUpdateNames, $_);
+					push(@allUpdateFiles, $_);
 				}
 			}
 			close(READER);
 			close(WRITER);
 			
-			@allUpdateNames = sort(@allUpdateNames);
+			@allUpdateFiles = sort(@allUpdateFiles);
 			
 			# get the difference of AllUpdates-LastUpdates=LatestUpdates
 			my %lastUp = map {$_ => 1} @lastUpdates;
-			my @updates = grep {not $lastUp{$_}} @allUpdateNames;
+			my @updates = grep {not $lastUp{$_}} @allUpdateFiles;
 			
 			if(@updates){
 				&logMessage("INFO", "($verbund) Found ". scalar(@updates) ." new Updates for $verbund: @updates");
@@ -428,7 +439,6 @@ sub getUpdates(@){
 	}
 	return @verbuendeWithNewUpdates;
 }
-#&getUpdates(("b3kat", "gbv", "swb")); #just for testing
+#&getUpdates(("swb")); #just for testing
 
 1;
-

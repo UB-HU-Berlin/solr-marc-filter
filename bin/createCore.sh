@@ -117,7 +117,7 @@ case "$updateType" in
 	coreSpecificString="$coreSpecificString${NEWLINE}oaiMaxDaysPerUpdatefile = $oaiMaxDaysPerUpdatefile"
 	;;
 
-"ssh")	
+"ssh")
 	echo "Choose SSH specific: ssh host"	
 	read sshHost
 	coreSpecificString="$coreSpecificString${NEWLINE}sshHost = $sshHost"
@@ -131,10 +131,24 @@ case "$updateType" in
 	coreSpecificString="$coreSpecificString${NEWLINE}sshDataPath = $sshDataPath"
 	;;
 
-"http")	
-	echo "Choose HTTP specific: url to data"
+"http")
+	echo "Choose HTTP parameter: url to data"
     read httpUrl
+    while [ "$httpUrl" == "" ]
+	do
+		echo "Choose HTTP parameter: url to data"
+		read httpUrl
+	done
     coreSpecificString="httpUrl = $httpUrl"
+    
+    echo "Choose HTTP parameter: url to deletions (skip this if there is just one url for updates and deletions you typed before)"
+    read httpUrlDeletions
+    
+    if [ "$httpUrlDeletions" == "" ]
+	then
+		httpUrlDeletions=$httpUrl
+	fi
+    coreSpecificString="$coreSpecificString${NEWLINE}httpUrlDeletions = $httpUrlDeletions"
 	;;
 
 *)	;;

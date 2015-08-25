@@ -114,4 +114,10 @@ sub logMessage($$$){
 		close($LOG);
 	}
 }
+ 
+sub uniq {
+  my %seen;
+  return grep { !$seen{$_}++ } @_;
+}
+
 1;

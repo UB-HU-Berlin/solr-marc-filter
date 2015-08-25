@@ -109,7 +109,7 @@ der Humboldt-Universität zu Berlin
 	Lorenz Fichte} 
 \date{\textbf{Stand}: \today \\
 \vspace{1cm}
-\textbf{Version}: 1.0b \\
+\textbf{Version}: 1.0.1 \\
 \vspace{1cm}
 }
 
@@ -479,11 +479,14 @@ Folgende Parameter sind in der Konfigurationsdatei enthalten:
 	
 	
 	%\textbf{Parameter} & \textbf{Beispiel} & \textbf{Erklärung} \\ \hline
+	\newpage
 	\multicolumn{3}{l}{(HTTP-spezifisch:)} \\ \hline
 	
-	\texttt{httpUrl} & http://swblod.bsz-bw.de/od/ & URL unter der die Updates ohne Zugangsbeschränkung oder weitere URL-Parameter erreicht und heruntergeladen werden können (Updates liegen in einem gepackten Format vor). \\ \hline
+	\texttt{httpUrl} & http://swblod.bsz-bw.de/od/ & URL unter der die Updates ohne Zugangsbeschränkung oder weitere URL-Parameter erreicht und heruntergeladen werden können. \\ \hline
 	
-	\newpage
+	\texttt{httpUrlDeletions} & http://swblod.bsz-bw.de/ loeschungen/ & URL unter der die Löschungen ohne Zugangsbeschränkung oder weitere URL-Parameter erreicht und heruntergeladen werden können (gibt es für den jeweiligen Core keine separate URL für Löschungen, wird hier automatisch \texttt{httpUrl} verwendet). \\ \hline
+	
+	
 	\multicolumn{3}{l}{(OAI-spezifisch:)} \\ \hline
 	
 	\texttt{oaiUrl} & http://bvbr.bib-bvb.de:8991/ aleph-cgi/oai/oai\_opendata.pl & URL unter der die OAI-Updates ohne Zugangsbeschränkung erreicht werden können (die \texttt{oaiUrl} ist im Grunde auch eine http-Webadresse, hinter der sich aber eine OAI-Schnittstelle befindet) \\ \hline
@@ -510,11 +513,12 @@ Folgende Parameter sind in der Konfigurationsdatei enthalten:
 	framexleftmargin=15pt,
 	breaklines=true
 }
+\newpage
 \textbf{Konfigurationsbeispiel \texttt{config.ini}} \\
 (Dies dient nicht als Konfigurationsvorlage sondern nur als Beispiel, da die nicht-globalen Einträge für jeden Core über das Skript zum Erstellen von Cores automatisch angelegt werden.)
 \lstinputlisting{config.ini.txt}
 
-
+\newpage
 \paragraph{./data/core/conf/config.properties}
 Es handelt sich hier um eine von SolrMarc benötigte Core-spezifische Konfigurationsdatei, in der u.a. Pfade, die Solr-URL und das Format angegeben sind. Diese Datei wird automatisch beim Anlegen des dazugehörigen Cores erstellt und muss i.d.R. nicht nachträglich verändert werden. \\ \\
 \textbf{Konfigurationsbeispiel \texttt{config.properties}} 
@@ -540,6 +544,7 @@ Updates sind Aktualisierungsdateien, die in regelmäßigen Abständen von den en
 		Die Dateien enthalten in der Regel immer nur die Identifikatoren (IDs) der Datensätze, die gelöscht werden sollen, wobei pro Zeile genau eine ID gelistet wird. Bei OAI Schnittstellen können Lösch-Updates und Daten-Updates in derselben Ergebnismenge liegen. \\
 		Namenskonvention (bei SCP und HTTP): \\
 		\texttt{file.del} (z.B. \texttt{gbv-catalog-delete-2015-02-01.del})
+		%TODO: namenskonvention überarbeiten!
 	\item Daten-Updates: \\
 		Die Dateien enthalten die eigentlichen neuen oder überarbeiteten Meta-Informationen. \\
 		Namenskonvention (bei SCP und HTTP):\\

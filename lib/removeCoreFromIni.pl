@@ -16,4 +16,4 @@ my $configs = Config::INI::Reader->read_file($pathConfigIni);
 my $core = $ARGV[0];
 delete $configs->{$core};
 Config::INI::Writer->write_file($configs, $pathConfigIni);
-&logMessage("WARNING", "($core) has been removed from config.ini");
+&logMessage("WARNING", "($core) Core has been removed from config.ini");
