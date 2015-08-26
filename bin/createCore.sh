@@ -67,7 +67,6 @@ do
    read updateType
 done
 
-#TODO check
 if [ "$updateType" == "ssh" ]
 then
 	./startSshAgent.sh
@@ -132,22 +131,34 @@ case "$updateType" in
 	;;
 
 "http")
-	echo "Choose HTTP parameter: url to data"
+	echo "Choose HTTP parameter: url to update data"
     read httpUrl
-    while [ "$httpUrl" == "" ]
+    http='^http://.+'
+	while [ "$httpUrl" == "" ] || ! [[ $httpUrl =~ $http ]]
 	do
-		echo "Choose HTTP parameter: url to data"
+		echo "Choose HTTP parameter: url to update data (non empty and beginning with http://)"
 		read httpUrl
 	done
     coreSpecificString="httpUrl = $httpUrl"
-    
-    echo "Choose HTTP parameter: url to deletions (skip this if there is just one url for updates and deletions you typed before)"
+		
+    echo "Choose HTTP parameter: url to deletion data (skip this if there is just one url for updates and deletions you typed before)"
     read httpUrlDeletions
-    
-    if [ "$httpUrlDeletions" == "" ]
+	if [ "$httpUrlDeletions" == "" ]
 	then
 		httpUrlDeletions=$httpUrl
 	fi
+	
+	while ! [[ $httpUrlDeletions =~ $http ]]
+	do
+		echo "Choose HTTP parameter: url to update data (url must begin with http://)"
+		read httpUrlDeletions
+		
+	    if [ "$httpUrlDeletions" == "" ]
+		then
+			httpUrlDeletions=$httpUrl
+		fi
+	done
+        
     coreSpecificString="$coreSpecificString${NEWLINE}httpUrlDeletions = $httpUrlDeletions"
 	;;
 
