@@ -20,7 +20,7 @@ sub optimize(@){
 	## check if there is enough free space (solr itself will not check that!)
 	foreach my $verbund(@verbuende){
 		
-		&logMessage("INFO", "Try optimizing core $verbund");
+		&logMessage("INFO", "($verbund) Try optimizing core");
 		
 		my $pathSolrconfig = $ini_pathToSolrCoresDefault . "$verbund/conf/solrconfig.xml";
 		my $solrDataDir = `cat $pathSolrconfig | grep dataDir`;
@@ -53,7 +53,7 @@ sub optimize(@){
 		}
 		
 		if($spaceGlobalLeft > $needed){
-			&logMessage("INFO", "Enough space to optimize $verbund (Needed: $needed MB, Available: $spaceGlobalLeft MB)");
+			&logMessage("INFO", "($verbund) Enough space to optimize core (Needed: $needed MB, Available: $spaceGlobalLeft MB)");
 			
 			# TODO: check when optimizing is over
 			# lock current core -> updateIsRunning
@@ -65,10 +65,10 @@ sub optimize(@){
 			$configs->{$verbund}->{updateIsRunning} = 0;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
 			
-			&logMessage("INFO", "Verbund $verbund optimized!");
+			&logMessage("INFO", "($verbund) core optimized!");
 		}
 		else{
-			&logMessage("WARNING", "Not enough space to optimize $verbund (Needed: $needed MB, Available: $spaceGlobalLeft MB)");
+			&logMessage("WARNING", "($verbund) Not enough space to optimize core (Needed: $needed MB, Available: $spaceGlobalLeft MB)!");
 		}
 	}
 }

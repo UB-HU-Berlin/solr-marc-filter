@@ -15,8 +15,6 @@ our $ini_urlSolrDefault;
 our $ini_pathLogFileAlternative;
 our $ini_pathIndexfile;
 
-#TODO: script is very specific to verbund GBV - make more independent
-
 sub updateDelete(@){
 	my $pathConfigIni = "$FindBin::Bin/../etc/config.ini";
 	my $configs = Config::INI::Reader->read_file($pathConfigIni);
@@ -37,7 +35,7 @@ sub updateDelete(@){
 				&logMessage("WARNING", "($verbund) can not update/delete - update already in progress and locked by config.ini");
 				next;
 			}
-		
+			
 			$configs->{$verbund}->{updateIsRunning} = 1;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
 			
@@ -75,7 +73,7 @@ sub updateDelete(@){
 			my @filesWithUpd = ();
 			
 			while(my $file = readdir(DIR_UPD)){
-				my $updateFormat = $configs->{$verbund}->{updateFormat};
+				my $updateFormat = $configs->{$verbund}->{'updateFormat'};
 				
 				if ($file =~ m/\.$updateFormat$/){
 					push(@filesWithUpd, $file);
@@ -85,13 +83,13 @@ sub updateDelete(@){
 			
 			open(my $alternLOG, ">> $ini_pathLogFileAlternative") or die $!;
 			print $alternLOG "\n\n". &getTimeStr() . " ($verbund): \n";
+			close $alternLOG;
 			
-			my $configProperties = $configs->{$verbund}->{configPropertiesFile};
+			my $configProperties = $configs->{$verbund}->{'configPropertiesFile'};
 			$configProperties = $ini_pathToFachkatalogGlobal . $configProperties if($configProperties =~ /^(?!\/).+/);
 			
 			my @ids = ();
 			
-			#TODO: pairwise deletions (til line 151) not tested yet with more than one update and delete file
 			# prepare list for pairwise deletions
 			my $dateFormat = '\d\d\d\d-\d\d-\d\d';
 			my $dateLength = length("YYYY-MM-DD");
@@ -115,7 +113,8 @@ sub updateDelete(@){
 			for my $updateOrDeletion(@mixedListSorted){
 				
 				# apply deletions and move the deletions afterwords to applied
-				if($updateOrDeletion =~ /delete/){
+				#TODO: wieder gbv spezifisch - hier muss es aber endungsabhängig sein!!
+				if($updateOrDeletion =~ /\.del$/){
 
 					&logMessage("INFO", "($verbund) Applying deletions from file $updateOrDeletion to solr index ..");
 					&logMessage("SYS", "($verbund) echo -e '\x04' | $ini_pathIndexfile $dirDel$updateOrDeletion $configProperties 2 > $ini_pathLogFileAlternative >/dev/null");
@@ -131,7 +130,7 @@ sub updateDelete(@){
 				}
 				
 				# apply updates and move the updates afterwords to applied
-				elsif($updateOrDeletion =~ /update/){
+				elsif($updateOrDeletion =~ /\.(xml|mrc)$/){
 					&logMessage("INFO", "($verbund) Applying updates from file $updateOrDeletion to solr index ..");
 					&logMessage("SYS", "($verbund) $ini_pathIndexfile $dirUpd$updateOrDeletion $configProperties 2>>$ini_pathLogFileAlternative >/dev/null");
 					
@@ -146,7 +145,7 @@ sub updateDelete(@){
 				}
 			}
 			
-			$configs->{$verbund}->{updateIsRunning} = 0;
+			$configs->{$verbund}->{'updateIsRunning'} = 0;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
 		}
 	}

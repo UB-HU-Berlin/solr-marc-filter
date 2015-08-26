@@ -81,7 +81,7 @@ sub getUpdates(@){
 				
 				my @allUpdateFiles;
 				
-				# handle different Cores different
+				# handle different Cores differently
 				if($verbund eq 'swb'){
 					while($contentUpd =~ /<a href="(od-up_bsz-tit_\d{6}_\d{1,2}\.xml\.tar\.gz)">/g){
 						push(@allUpdateFiles, $1);
@@ -109,7 +109,7 @@ sub getUpdates(@){
 				my $now = &getTimeStr();
 				
 				if(@updates){
-					&logMessage("INFO", "($verbund) Found new Updates for $verbund: @updates");
+					&logMessage("INFO", "($verbund) Found new Updates: @updates");
 					push(@verbuendeWithNewUpdates, $verbund);
 				}
 				else{
@@ -123,8 +123,10 @@ sub getUpdates(@){
 				foreach my $fileName(@updates){
 					my $latestUpdate = $fileName;
 					&logMessage("INFO", "($verbund) downloading $fileName ..");
-					getstore($updateURL.$fileName, $pathToUpdates.$fileName) or die "Could not download $fileName from $updateURL" if $fileName =~ /$updateFormat/;
-					getstore($deletionURL.$fileName, $pathToUpdates.$fileName) or die "Could not download $fileName from $updateURL" if $fileName =~ /txt/;
+					
+					getstore($updateURL.$fileName, $pathToUpdates.$fileName) or &logMessage("ERROR", "($verbund) Could not download $fileName from $updateURL") if $fileName =~ /\.$updateFormat(\.tar\.gz)?$/;
+					getstore($deletionURL.$fileName, $pathToUpdates.$fileName) or &logMessage("ERROR", "($verbund) Could not download $fileName from $deletionURL") if $fileName =~ /\.txt(\.tar\.gz)?$/;
+					
 					print $inOut "$fileName\n";
 				}
 				
@@ -439,6 +441,6 @@ sub getUpdates(@){
 	}
 	return @verbuendeWithNewUpdates;
 }
-#&getUpdates(("swb")); #just for testing
+&getUpdates(("swb")); #just for testing
 
 1;
