@@ -491,6 +491,13 @@ Folgende Parameter sind in der Konfigurationsdatei enthalten:
 	
 	\texttt{oaiUrl} & http://bvbr.bib-bvb.de:8991/ aleph-cgi/oai/oai\_opendata.pl & URL unter der die OAI-Updates ohne Zugangsbeschränkung erreicht werden können (die \texttt{oaiUrl} ist im Grunde auch eine http-Webadresse, hinter der sich aber eine OAI-Schnittstelle befindet) \\ \hline
 	
+	\texttt{oaiMaxRecordsPerUpdatefile} & 10000 & Da die Updates über die OAI-Schnittstelle geladen werden und unterschiedlich viele Updates pro Tag vorliegen können aber nicht alle Updates in eine einzige Datei geschrieben werden sollte, kann mit diesem Parameter angegeben werden, wieviele Records maximal in einer Update-Datei abgelegt werden (Standardwert \texttt{10000}). \\ \hline
+	
+	\texttt{oaiMaxDaysPerUpdatefile} & 0 & Alternativ zum vorherigen Parameter kann auch angegeben werden, dass die angefallenen Updates tageweise zusammengefasst werden. Dann muss aber der Parameter \texttt{oaiMaxRecordsPerUpdatefile=0}.\\ \hline	
+	
+	%TODO: oaiOldestUpdate
+	\texttt{oaiOldestUpdate} & 2015-05-01T00:00:00Z & Stellt das Datum des letzten Gesamtabzugs und damit ältestes Update Datum dar. D.h. sollten die veröffentlichten Initialdaten des jeweiligen Verbundes vom 1. Mai sein, gibt es nur Updates nach diesem Datum. \\ \hline	
+	
 
 	\multicolumn{3}{l}{(SCP-spezifisch:)} \\ \hline
 	
@@ -498,7 +505,7 @@ Folgende Parameter sind in der Konfigurationsdatei enthalten:
 	
 	\texttt{sshUser} & user & Benutzername, der Zugriff auf den entfernten Server besitzt \\ \hline
 		
-	\texttt{sshHost} & kobv & IP-Adresse des Servers oder ssh Kürzel (bei Kürzel muss dieser in ~.ssh/config eingetragen sein) \\ \hline
+	\texttt{sshHost} & kobv & IP-Adresse des Servers oder ssh Kürzel (bei Kürzel muss dieser in \texttt{\textasciitilde.ssh/config} eingetragen sein) \\ \hline
 	
 	
 \end{longtable}
@@ -707,7 +714,7 @@ Alle Ergebnisse werden standardmäßig unter \texttt{results} als \texttt{filter
 \label{sec:workaround}
 Im Wesentlichen sind folgende Schritte durchzuführen: 
 \begin{enumerate}
-	\item Repository clonen
+	\item Repository clonen %TODO: (oder letzte Version herunterladen)
 	\item[] \texttt{\$ git clone https://github.com/UB-HU-Berlin/solr-marc-filter.git}
 	%TODO: prüfen ob diese Variablen wirklich angegeben werden müssen!
 	\item die unter Abschnitt \ref{sec:subsub:software} genannten CPAN Module installieren (dabei müssen jeweils auch alle Referenzmodule mit installiert, sowie benötigte Systempakete ggf. via apt-get nachinstalliert werden)
