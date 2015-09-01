@@ -5,6 +5,10 @@ use strict;
 
 use Config::INI::Reader;
 use FindBin;
+use DateTime;
+
+## time format
+our $timeFormat = '%Y-%m-%d'.'T'.'%H:%M:%S'.'Z';
 
 ## set logging policies (1 -> debug, 0 -> do not debug)
 my $log_debug 	= 1;
@@ -13,8 +17,9 @@ my $log_system	= 1;
 my $log_warning	= 1;
 my $log_error 	= 1;
 
-# regex negative lookahead - if there is not a / at beginning
-our $re = "^(?!\/).+"; 
+## regex negative lookahead - if there is not a / at beginning
+#our $re = "^(?!\/).+"; 
+our $reIsGlobalPath = "^(?!\/).+";
 
 ## read ini values once and make them global
 my $configs = Config::INI::Reader->read_file("$FindBin::Bin/../etc/config.ini");
@@ -23,25 +28,25 @@ my $configs = Config::INI::Reader->read_file("$FindBin::Bin/../etc/config.ini");
 our $ini_pathToFachkatalogGlobal = $configs->{'_'}->{'pathToFachkatalogGlobal'};
 
 our $ini_pathIndexfile = $configs->{'_'}->{'pathIndexfile'};
-$ini_pathIndexfile = $ini_pathToFachkatalogGlobal . $ini_pathIndexfile if($ini_pathIndexfile =~ $re);
+$ini_pathIndexfile = $ini_pathToFachkatalogGlobal . $ini_pathIndexfile if($ini_pathIndexfile =~ $reIsGlobalPath);
 
 our $ini_pathQuery = $configs->{'_'}->{'pathQuery'};
-$ini_pathQuery = $ini_pathToFachkatalogGlobal . $ini_pathQuery if($ini_pathQuery =~ $re);
+$ini_pathQuery = $ini_pathToFachkatalogGlobal . $ini_pathQuery if($ini_pathQuery =~ $reIsGlobalPath);
 
 our $ini_pathResults = $configs->{'_'}->{'pathResults'};
-$ini_pathResults = $ini_pathToFachkatalogGlobal . $ini_pathResults if($ini_pathResults =~ $re);
+$ini_pathResults = $ini_pathToFachkatalogGlobal . $ini_pathResults if($ini_pathResults =~ $reIsGlobalPath);
 
 our $ini_pathLogFile = $configs->{'_'}->{'pathLogFile'};
-$ini_pathLogFile = $ini_pathToFachkatalogGlobal . $ini_pathLogFile if($ini_pathLogFile =~ $re);
+$ini_pathLogFile = $ini_pathToFachkatalogGlobal . $ini_pathLogFile if($ini_pathLogFile =~ $reIsGlobalPath);
 
 our $ini_pathLogFileAlternative = $configs->{'_'}->{'pathLogFileAlternative'};
-$ini_pathLogFileAlternative = $ini_pathToFachkatalogGlobal . $ini_pathLogFileAlternative if($ini_pathLogFileAlternative =~ $re);
+$ini_pathLogFileAlternative = $ini_pathToFachkatalogGlobal . $ini_pathLogFileAlternative if($ini_pathLogFileAlternative =~ $reIsGlobalPath);
 
 our $ini_pathToSolrMarcDefault = $configs->{'_'}->{'pathToSolrMarcDefault'};
-$ini_pathToSolrMarcDefault = $ini_pathToFachkatalogGlobal . $ini_pathToSolrMarcDefault if($ini_pathToSolrMarcDefault =~ $re);
+$ini_pathToSolrMarcDefault = $ini_pathToFachkatalogGlobal . $ini_pathToSolrMarcDefault if($ini_pathToSolrMarcDefault =~ $reIsGlobalPath);
 
 our $ini_pathToSolrCoresDefault = $configs->{'_'}->{'pathToSolrCoresDefault'};
-$ini_pathToSolrCoresDefault = $ini_pathToFachkatalogGlobal . $ini_pathToSolrCoresDefault if($ini_pathToSolrMarcDefault =~ $re);
+$ini_pathToSolrCoresDefault = $ini_pathToFachkatalogGlobal . $ini_pathToSolrCoresDefault if($ini_pathToSolrMarcDefault =~ $reIsGlobalPath);
 
 
 # values .. just save value
@@ -120,4 +125,39 @@ sub uniq {
   return grep { !$seen{$_}++ } @_;
 }
 
+#TODO: check if needed!-> not needed - use Time::Piece
+# function compares two dates of format yyyy-mm-ddThh:mm:ssZ
+# where y: year, m: month, d: day, h: hour, m: minute, s:second
+# T,Z: literal placeholders
+# example date: 2015-08-26T00:00:00Z
+# returns
+#	-1 if date1 is lower than date2
+#	0  if dates are equal
+#	1  if date1 is greater than date2
+sub compareTime($$){
+	my $date1 = $_[0];
+	my $date2 = $_[1];
+	my $dateFormat = '\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ';
+	die("wrong date format") if(!($date1 =~ /$dateFormat/) or !($date2 =~ /$dateFormat/));
+	
+	my $dateTime1 = DateTime->new(
+		year 	=> substr($date1, 0, 4),
+		month 	=> substr($date1, 5, 2),
+		day 	=> substr($date1, 8, 2),
+		hour 	=> substr($date1, 11, 2),
+		minute 	=> substr($date1, 14, 2),
+		second 	=> substr($date1, 17, 2),
+	);
+	
+	my $dateTime2 = DateTime->new(
+		year 	=> substr($date2, 0, 4),
+		month 	=> substr($date2, 5, 2),
+		day 	=> substr($date2, 8, 2),
+		hour 	=> substr($date2, 11, 2),
+		minute 	=> substr($date2, 14, 2),
+		second 	=> substr($date2, 17, 2),
+	);
+	
+	return DateTime->compare($dateTime1, $dateTime2);
+}
 1;
