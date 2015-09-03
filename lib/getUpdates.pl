@@ -6,6 +6,7 @@ use strict;
 use Archive::Extract;
 use Config::INI::Reader;
 use Config::INI::Writer;
+use Date::Simple qw(date);
 use FindBin;
 use HTTP::OAI;
 use LWP::UserAgent;
@@ -14,9 +15,12 @@ use Net::SCP;
 use Net::SSH qw(sshopen2);
 use Net::SSH qw(sshopen3);
 use Text::Unidecode; # use this for wide character in print
+use Time::Piece;
 
 require "$FindBin::Bin/helper.pl";
 our $ini_pathToFachkatalogGlobal;
+our $reIsGlobalPath;
+our $timeFormat;
 
 sub getUpdates(@){
 	my $pathConfigIni = "$FindBin::Bin/../etc/config.ini";
@@ -29,7 +33,7 @@ sub getUpdates(@){
 	foreach my $verbund(@verbuende){
 		# check if the path is relative or global
 		my $pathToUpdates = $configs->{$verbund}->{updates};
-		$pathToUpdates = "$ini_pathToFachkatalogGlobal$pathToUpdates" if($pathToUpdates =~ /^(?!\/).+/);
+		$pathToUpdates = "$ini_pathToFachkatalogGlobal$pathToUpdates" if($pathToUpdates =~ $reIsGlobalPath);
 		
 		my $updateFormat = $configs->{$verbund}->{'updateFormat'};
 		my @lastUpdates;
@@ -50,7 +54,7 @@ sub getUpdates(@){
 			my $path = $configs->{$verbund}->{'updates'};
 			
 			# check if the path is relative or global
-			$path = "$ini_pathToFachkatalogGlobal$path" if($path =~ /^(?!\/).+/);
+			$path = "$ini_pathToFachkatalogGlobal$path" if($path =~ $reIsGlobalPath);
 			
 			open($inOut, "< $path"."lastUpdates.txt") or die("ERROR: Could not open lastUpdates file of $verbund: $!, $path");
 			while(my $currLine = <$inOut>){
@@ -154,7 +158,7 @@ sub getUpdates(@){
 		}
 		
 		## SSH, SCP
-		if($configs->{$verbund}->{'updateType'} eq "ssh"){
+		elsif($configs->{$verbund}->{'updateType'} eq "ssh"){
 			$configs->{$verbund}->{updateIsRunning} = 1;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
 			
@@ -268,59 +272,71 @@ sub getUpdates(@){
 		}
 		
 		## OAI
-		if($configs->{$verbund}->{'updateType'} eq "oai"){
+		elsif($configs->{$verbund}->{'updateType'} eq "oai"){
+			
 			$configs->{$verbund}->{updateIsRunning} = 1;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
 			
 			# get the updates and deletions via oai interface..
 			my $h = HTTP::OAI::Harvester->new(
-				baseURL => $configs->{$verbund}->{'oaiUrl'},#?verb=ListRecords',
-				#verb => 'ListRecords',
-				#version => '2.0',
+				baseURL => $configs->{$verbund}->{'oaiUrl'},
 				resume  => 0
 			);
 			
-			# lastDate is the either the last time-stamp from oai interface which dates the last correct update 
-			# or if this is the first update it will be the oldest possible updated because there a no updates 
+			# lastDate is either the last time-stamp from oai interface which dates the last correct update
+			# or if this is the first update it will be the oldest possible updated because there a no updates
 			# before this specific date
-			my $lastDate = pop @lastUpdates;
+			my $lastDate;
+			my $oaiOldestUpdate = $configs->{$verbund}->{'oaiOldestUpdate'};
+			
 			if(scalar(@lastUpdates) == 0){
-				$lastDate = $configs->{$verbund}->{'oaiOldestUpdate'}; 
+				$lastDate = $oaiOldestUpdate; 
 			}
 			else{
+				$lastDate = pop @lastUpdates;
 				while($lastDate eq ''){
 					$lastDate = pop @lastUpdates;
 				}
+				# just to catch the case that the lastUpdate-file is full with newlines
+				if($lastDate eq ''){
+					$lastDate = $oaiOldestUpdate;
+				}
 			}
+			# if the last Update printed into the lastUpdate.txt is older than oaiOldestUpdate, take the newer date
+			my $diff = Time::Piece->strptime($oaiOldestUpdate, $timeFormat) - Time::Piece->strptime($lastDate, $timeFormat); 
+			if($diff > 0){
+				$lastDate = $oaiOldestUpdate;
+			}
+						
 			my $maxRecordsPerUpdatefile = int($configs->{$verbund}->{oaiMaxRecordsPerUpdatefile}) 	if $configs->{$verbund}->{oaiMaxRecordsPerUpdatefile};
 			$maxRecordsPerUpdatefile = 0 unless $maxRecordsPerUpdatefile;
 			my $maxDaysPerUpdatefile 	= int($configs->{$verbund}->{oaiMaxDaysPerUpdatefile})		if $configs->{$verbund}->{oaiMaxDaysPerUpdatefile};
 			$maxDaysPerUpdatefile = 0 unless $maxDaysPerUpdatefile;
 			
 			if($maxRecordsPerUpdatefile == 0 and $maxDaysPerUpdatefile == 0 or $maxRecordsPerUpdatefile != 0 and $maxDaysPerUpdatefile != 0){
-				&logMessage("ERROR", "($verbund) Either maxRecordsPerUpdatefile or maxDaysPerUpdatefile has to be 0!", 1);
-				&logMessage("INFO", "($verbund) Change maxRecordsPerUpdatefile or maxDaysPerUpdatefile in config.ini and restart update!", 1);
+				&logMessage("ERROR", "($verbund) Either maxRecordsPerUpdatefile or maxDaysPerUpdatefile has to be 0!");
+				&logMessage("INFO", "($verbund) Change maxRecordsPerUpdatefile or maxDaysPerUpdatefile in config.ini and restart update!");
 				$configs->{$verbund}->{updateIsRunning} = 0;
 				Config::INI::Writer->write_file($configs, $pathConfigIni);
 				next;
 			}
 			
+			# OAI paramters
 			my $from = $lastDate;
-			my $until = &getTimeStr();
+			my $now = &getTimeStr();
+			my $until = $now;
+
+			# because the interface needs time to upload the new data there is a delay to the newest updates per default
+			# one day difference should be enough time
+			my $yesterday = date(substr($until, 0, 10)) - 1 . substr($until, 10);
+			$until = $yesterday;			
 			
 			my $listRecs = $h->ListRecords(
 				verb => 'ListRecords',
 				metadataPrefix => 'marc21',
 				from => $from,
 				until => $until
-				#handlers=>{metadata=>'HTTP::OAI::Metadata::OAI_DC'},
-			);
-			
-			my $getRec = $h->GetRecord(
-				verb => 'GetRecord',
-				metadataPrefix => 'marc21',
-				from => $from,
-				until => $until
+				#handlers=>{metadata=>'HTTP::OAI::Metadata::OAI_DC'}
 			);
 			
 			# number of total updates (updated records + deleted records)
@@ -330,36 +346,50 @@ sub getUpdates(@){
 			# number of update files
 			my $n = 0;
 			
+			# in case of an error
+			if($listRecs->is_error){
+				my $httpStatus = $listRecs->{_rc};
+				&logMessage("ERROR", "($verbund) OAI-Update failed (HTTP-status: $httpStatus)!");
+				# unlock the core in config.ini
+				$configs->{$verbund}->{updateIsRunning} = 0;
+				Config::INI::Writer->write_file($configs, $pathConfigIni);
+				next;
+			}
+			
 			# maxResultsPerReq is the standard value how many results will be returned at once on oai api (normally its 30)
 			my $maxResultsPerReq = scalar @{$listRecs->{content}[0]->{item}} if($listRecs->{content}[0]->{item});
-			&logMessage("INFO", "($verbund) There are no new updates between $from and $until!", 1) unless $maxResultsPerReq;
+			&logMessage("INFO", "($verbund) There are no new updates between $from and $until!") unless $maxResultsPerReq;
 			$configs->{$verbund}->{updateIsRunning} = 0;
 			Config::INI::Writer->write_file($configs, $pathConfigIni) unless $maxResultsPerReq;
 			next unless $maxResultsPerReq;
 			push(@verbuendeWithNewUpdates, $verbund) if $maxResultsPerReq;
 			
 			my @deletions;
-			&logMessage("INFO", "($verbund) found new updates (download will take some minutes)", 1);
-			&logMessage("DEBUG", "($verbund) maxResultsPerReq: $maxResultsPerReq", 1);
+			my $d = scalar(@deletions);	# for filename of deletions
+			&logMessage("INFO", "($verbund) found new updates (download will take some minutes, maybe hours)");
+			&logMessage("DEBUG", "($verbund) maxResultsPerReq: $maxResultsPerReq");
 			
 			# check if the path is relative or global
 			my $path = $configs->{$verbund}->{'updates'};
-			$path = "$ini_pathToFachkatalogGlobal$path" if($path =~ /^(?!\/).+/);
+			$path = "$ini_pathToFachkatalogGlobal$path" if($path =~ $reIsGlobalPath);
 			
-			my $now = &getTimeStr();
-			open(my $OUTupd, "> $path"."updates_$from"."_$until.xml") or die("($now) ERROR: ($verbund) Could not open $path"."updates_$from"."_$until.xml: $!\n");
+			open(my $OUTupd, "> $path"."updates_$from"."_$until"."_$n.xml") or die("($now) ERROR: ($verbund) Could not open $path"."updates_$from"."_$until.xml: $!\n");
 			binmode $OUTupd, ":utf8";
-			open(my $OUTdel, "> $path"."deletions_$from"."_$until.txt") or die("($now) ERROR: ($verbund) Could not open $path"."deletions_$from"."_$until.txt: $!\n");
+			open(my $OUTdel, "> $path"."deletions_$from"."_$until" . "_" . $d .".txt") or die("($now) ERROR: ($verbund) Could not open $path"."deletions_$from"."_$until.txt: $!\n");
 			
 			# prepare the xml file for the updates
 			print $OUTupd '<?xml version="1.0" encoding="ISO-8859-1" ?><marc:collection xmlns:marc="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">'."\n";
 			
-			my $lastDatestamp;
-			while(my $rec = $listRecs->next){
+			my ($lastDatestamp, $firstDatestamp);
+			
+			# iterate over all records but only if there is no error
+			while( not ($listRecs->is_error) and my $rec = $listRecs->next){
 				$total++;
 				my $status = $rec->header->status;
 				my $currID = $rec->header->identifier;
 				my $currDatestamp = $rec->header->datestamp;
+				
+				$firstDatestamp = $currDatestamp if($total % $maxRecordsPerUpdatefile == 1);
 				$lastDatestamp = $currDatestamp; 
 				
 				# either we have deletions
@@ -370,36 +400,56 @@ sub getUpdates(@){
 				}
 				# .. or we have updates
 				else{
-					# print updates metadata into file
+					# count update and print updates metadata into file
 					$u++;
-					my $recXML = $rec->{metadata}->{current}->firstChild->firstChild;
-					print $OUTupd $recXML;
+					
+					# note: b3kat (http://www.bib-bvb.de/web/b3kat/open-data) does not print the oai-identifier 
+					#		into the xml records - so it is needed to print the id into field 999 manually because
+					#		this id is used to index the update-record when it is pushed to the Solr-Core
+					if($verbund =~ /b3kat/i){
+						my $recXML = $rec->{metadata}->{current}->firstChild->firstChild;
+						$recXML =~ s/<\/marc:record>$/<marc:datafield tag="999" ind1=" " ind2=" "><marc:subfield code="a">$currID<\/marc:subfield><\/marc:datafield><\/marc:record>/;
+						print $OUTupd $recXML;
+					}
+					else{
+						my $recXML = $rec->{metadata}->{current}->firstChild->firstChild;
+						print $OUTupd $recXML;
+					}
 				}
-				#&logMessage("INFO", "$total, ($u): ". $currDatestamp. ", ". $currID. ", ". $status)  if $status;
-				#&logMessage("INFO", "$total, ($u): ". $currDatestamp. ", ". $currID)  unless $status;
+				
+				&logMessage("DEBUG", "$total, ($u): ". $currDatestamp. ", ". $currID. ", ". $status, 0)  if $status;
+				&logMessage("DEBUG", "$total, ($u): ". $currDatestamp. ", ". $currID, 0)  unless $status;
 				
 				# the list goes on so get resumption token to get all the updates
 				if($total % $maxResultsPerReq == 0){
 					my $rToken = $listRecs->resumptionToken();
-					#print $rToken->resumptionToken, "\n" if $rToken;
 					$listRecs = $h->ListRecords(
 						verb => 'ListRecords',
 						resumptionToken => $rToken->resumptionToken,
 					) if $rToken;
+					&logMessage("DEBUG", "($verbund) rToken: $rToken->{resumptionToken}", 0);
 				}
 				
 				# build new file if there are too many updates for the given period
 				if($maxRecordsPerUpdatefile != 0 and $u % $maxRecordsPerUpdatefile == 0 and $u != 0){
+					
 					$n++;
 					print $OUTupd "\n".'</marc:collection>';
 					close $OUTupd;
 					
+					# rename the update file - because now we know the timestamp slots
+					my $oldFileName = $path . "updates_" . $from . "_" . $until . "_" . $n . ".xml";
+					my $newFileName = $path . "updates_" . $firstDatestamp . "_" . $lastDatestamp . ".xml";
+					&renameFile($oldFileName, $newFileName, $verbund);
+					
+					# make new file for the updates
 					my $filename = "$path"."updates_$from"."_$until"."_$n.$updateFormat";
 					open($OUTupd, "> $filename") or die("ERROR: Could not open $filename file of $verbund: $!");
 					binmode $OUTupd, ":utf8";
 					print $OUTupd '<?xml version="1.0" encoding="ISO-8859-1" ?><marc:collection xmlns:marc="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">'."\n";
 					print $inOut "$currDatestamp\n";
-					&logMessage("INFO", "($verbund) got updates until $currDatestamp.", 1);
+					&logMessage("INFO", "($verbund) got updates until $currDatestamp.");
+					
 					close($inOut);
 					open($inOut, ">> $path"."lastUpdates.txt") or die("ERROR: Could not open lastUpdates file of $verbund: $!");
 				}
@@ -407,40 +457,76 @@ sub getUpdates(@){
 				# build new file if there are too many deletions for the given period
 				if(scalar(@deletions) % $maxRecordsPerUpdatefile == 0 and scalar(@deletions) != 0){
 					close($OUTdel);
-					my $d = scalar(@deletions);
-					my $filename = "$path"."deletions_$from"."_$until"."_$d.txt";
+					
+					# rename the deletion file - because now we know the timestamp slots
+					my $oldFileName = $path . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
+					my $newFileName = $path . "deletions_" . $firstDatestamp . "_" . $lastDatestamp . ".txt";
+					&renameFile($oldFileName, $newFileName, $verbund);
+					
+					# make new file for the deletions
+					$d = scalar(@deletions);
+					my $filename = $path . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
 					$now = &getTimeStr();
 					open($OUTdel, "> $filename") or die("($now) ERROR: ($verbund) Could not open $filename file of $verbund: $!\n");
 				}
 			}
+			
+			# if an error occured log this and rename last updates
+			if($listRecs->is_error){
+				my $httpStatus = $listRecs->{_rc};
+				&logMessage("ERROR", "($verbund) OAI-Update failed (HTTP-status: $httpStatus)!");
+				&logMessage("INFO", "($verbund) Not all updates could be downloaded. Try again next time (update will start at last correct update).");
+				
+				# rename the update file - because now we know the timestamp slots
+				&renameFile($path . "updates_" . $from . "_" . $until . "_" . $n . ".xml", 
+							$path . "updates_" . $firstDatestamp . "_" . $lastDatestamp . ".xml", $verbund);
+				
+				# rename the deletion file - because now we know the timestamp slots
+				&renameFile($path . "deletions_" . $from . "_" . $until . "_" . $d . ".txt", 
+							$path . "deletions_" . $firstDatestamp . "_" . $lastDatestamp . ".txt", $verbund);
+			}
+			
 			print $OUTupd "\n".'</marc:collection>';
-			print $inOut "$until\n";
+			print $inOut "$lastDatestamp\n";
 			
 			close $OUTdel;
 			close $OUTupd;
 			close $inOut;
 			
-			&logMessage("INFO", "($verbund) number of deletions: ". scalar(@deletions) . " of $total in total", 1);
-			&logMessage("INFO", "($verbund) number of updates: $u of $total in total", 1);
-			&logMessage("ERROR", "($verbund) $listRecs->message", 1) if $listRecs->is_error;
+			&logMessage("INFO", "($verbund) number of deletions: ". scalar(@deletions) . " of $total in total");
+			&logMessage("INFO", "($verbund) number of updates: $u of $total in total");
 			
-			# update the config.ini file when the last update took place
+			# update the config.ini file when the last update was downloaded
 			$configs->{$verbund}->{'lastUpdate'} = $lastDatestamp;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
 			
+			# check if path is relative or global (normaly its relative)
+			my $pathToUpdates = $configs->{$verbund}->{'updates'};
+			$pathToUpdates = $ini_pathToFachkatalogGlobal . $configs->{$verbund}->{'updates'} if($configs->{$verbund}->{'updates'} =~ $reIsGlobalPath);
+			
 			# delete the updates or the deletions file if there ain't new updates
 			if(scalar(@deletions) == 0){
-				system("rm $configs->{$verbund}->{updates}"."deletions_$from"."_$until.txt");
+				system("rm $pathToUpdates"."deletions_$from"."_$until.txt");
 			}
 			if($u == 0){
-				system("rm $configs->{$verbund}->{updates}"."updates_$from"."_$until.xml");
+				system("rm $pathToUpdates"."updates_$from"."_$until.xml");
 			}
+			# unlock the core in config.ini
 			$configs->{$verbund}->{updateIsRunning} = 0;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
 		}
 	}
 	return @verbuendeWithNewUpdates;
 }
-&getUpdates(("swb")); #just for testing
+
+sub renameFile($$){
+	my $oldFileName = $_[0];
+	my $newFileName = $_[1];
+	my $verbund = $_[2];
+	&logMessage("SYS", "($verbund) mv $oldFileName $newFileName");
+	system("mv $oldFileName $newFileName");
+}
+
+#&getUpdates(("b3kat")); #just for testing
 
 1;
