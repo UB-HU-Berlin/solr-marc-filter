@@ -10,12 +10,12 @@ use Config::INI::Writer;
 use FindBin;
 use Time::Piece;
 
-my $timeFormat = '%Y-%m-%d'.'T'.'%H:%M:%S'.'Z';
-
-require "$FindBin::Bin/helper.pl";
 require "$FindBin::Bin/getUpdates.pl";
 require "$FindBin::Bin/updateDelete.pl";
 require "$FindBin::Bin/optimize.pl";
+
+require "$FindBin::Bin/helper.pl";
+our $timeFormat;
 
 my $configs = Config::INI::Reader->read_file("$FindBin::Bin/../etc/config.ini");
 my @verbuendeWithUpdates;
@@ -25,11 +25,11 @@ foreach my $verbund(@verbuende){
 	next if $verbund eq '_';
 	
 	if($configs->{$verbund}->{'check'} eq '0'){
-		&logMessage("WARNING", "($verbund) will not be checked for updates due to check=0!", 1);
+		&logMessage("WARNING", "($verbund) will not be checked for updates due to check=0!");
 		next;
 	}
 	elsif($configs->{$verbund}->{'updateIsRunning'} eq '1'){
-		&logMessage("WARNING", "($verbund) update already in progress and locked by config.ini", 1);
+		&logMessage("WARNING", "($verbund) update already in progress and locked by config.ini");
 		next;
 	}
 	else{
@@ -45,16 +45,18 @@ foreach my $verbund(@verbuende){
 			push(@verbuendeWithUpdates, @v);
 		}
 		else{
-			&logMessage("INFO", "($verbund) Last update newer than $days days ($lastUpdate). Skip looking for updates.", 1);
+			&logMessage("INFO", "($verbund) Last update newer than $days days ($lastUpdate). Skip looking for updates.");
 		}
 	}
 }
+
+&logMessage("DEBUG", "verbuendeWithUpdates: @verbuendeWithUpdates");
 
 foreach my $verbund(@verbuendeWithUpdates){
 	next if $verbund eq '_';
 	
 	if($configs->{$verbund}->{'updateIsRunning'} eq '1'){
-		&logMessage("WARNING", "($verbund) update in progress - wait for update to apply changes", 1);
+		&logMessage("WARNING", "($verbund) update in progress - wait for update to apply changes");
 		next;
 	}
 	

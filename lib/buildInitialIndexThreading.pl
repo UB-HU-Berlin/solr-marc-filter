@@ -9,48 +9,41 @@ use threads;
 use Sys::Info;
 use FindBin;
 
+require "$FindBin::Bin/optimize.pl";
 require "$FindBin::Bin/helper.pl";
 our $ini_pathToFachkatalogGlobal;
 our $ini_pathIndexfile;
 our $ini_pathConfigIni;
+our $reIsGlobalPath;
 
 my @results = ();
 my $configs = Config::INI::Reader->read_file("$FindBin::Bin/../etc/config.ini");
-#my @verbuende = keys %$configs;
 my @verbuende = @ARGV;
 
 my $info = Sys::Info->new();
 my $cpu  = $info->device( CPU => my %options );
 my $cpuNumber = $cpu->count || 1;
-
 my @threads;
-my $i = 0;
 
+## for each differend core build a new thread
 foreach my $verbund(@verbuende){
-#	my @runningThreads = threads->list;
-		
-	#if(scalar(@runningThreads) < $cpuNumber-1 and $i < scalar(@verbuende) and not $verbund eq "_"){
-	if(not $verbund eq "_"){
-		my $thread = threads->new('index', "$verbund");
-		#my $thread = threads->new(&index($verbund));
-		#my $thread = threads->create(\&index, $verbund);
-		push(@threads, $thread);
-		#print threads->list . "\n";
-		$i++;
-	}
+	next if $verbund eq "_";
+	my $thread = threads->new('index', "$verbund");
+	push(@threads, $thread);
 }
 
+## main-thread should wait for other threads to finish
 foreach my $thr(@threads){
 	$thr->join();
-	#$thr->detach();
 }
 
+## submethod for indexing the records
 sub index(){
 	my $verbund = $_[0];
 	
-	## get and check if the path is relative or global
+	## get path and check if it is relative or global
 	my $dirInitial = $configs->{$verbund}->{'initial'};
-	$dirInitial = $ini_pathToFachkatalogGlobal . $dirInitial if($dirInitial =~ our $re);
+	$dirInitial = $ini_pathToFachkatalogGlobal . $dirInitial if($dirInitial =~ $reIsGlobalPath);
 	
 	opendir(DIR, $dirInitial) or die $!;
 	my @filesToIndex = ();
@@ -63,10 +56,11 @@ sub index(){
 	}
 	@filesToIndex = sort @filesToIndex;
 	&logMessage("INFO", "($verbund) Trying to push ". scalar(@filesToIndex) ." initial data files to index: @filesToIndex");
-		
+	
+	## get path and check if it is relative or global
 	my $configProperties = $configs->{$verbund}->{'configPropertiesFile'};
-	$configProperties = $ini_pathToFachkatalogGlobal . $configProperties if($configProperties =~ /^(?!\/).+/);
-			
+	$configProperties = $ini_pathToFachkatalogGlobal . $configProperties if($configProperties =~ $reIsGlobalPath);
+		
 	my $logFilePath = $ini_pathToFachkatalogGlobal . "log/log_$verbund.txt";
 	system("touch $logFilePath");
 	
@@ -82,5 +76,7 @@ sub index(){
 			&logMessage("INFO", "($verbund) finished pushing $fileToIndex to Solr index..");
 		}
 	}
+	&optimize($verbund);
+	
 	return 1;
 }

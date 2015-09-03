@@ -8,6 +8,7 @@ use FindBin;
 
 require "$FindBin::Bin/helper.pl";
 our $ini_pathToFachkatalogGlobal;
+our $reIsGlobalPath;
 
 my $configs = Config::INI::Reader->read_file("$FindBin::Bin/../etc/config.ini");
 my @verbuende = keys %$configs;
@@ -18,7 +19,7 @@ foreach my $verbund(@verbuende){
 		
 		# get and check if the path is relative or global
 		my $dirUpd = $configs->{$verbund}->{'updates'};
-		$dirUpd = $ini_pathToFachkatalogGlobal.$dirUpd if($dirUpd =~ our $re);
+		$dirUpd = $ini_pathToFachkatalogGlobal.$dirUpd if($dirUpd =~ $reIsGlobalPath);
 		$dirUpd .= "applied/";		#TODO: make more variable!
 		
 		opendir(DIR_DEL, $dirUpd) or die $!;

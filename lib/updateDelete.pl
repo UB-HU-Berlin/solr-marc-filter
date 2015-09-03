@@ -9,7 +9,7 @@ use Apache::Solr;
 use FindBin;
 
 require "$FindBin::Bin/helper.pl";
-our $re;
+our $reIsGlobalPath;
 our $ini_pathToFachkatalogGlobal;
 our $ini_urlSolrDefault;
 our $ini_pathLogFileAlternative;
@@ -45,7 +45,7 @@ sub updateDelete(@){
 			
 			# get and check if the path is relative or global
 			my $dirDel = $configs->{$verbund}->{'updates'};
-			$dirDel = $ini_pathToFachkatalogGlobal . $dirDel if($dirDel =~ $re);
+			$dirDel = $ini_pathToFachkatalogGlobal . $dirDel if($dirDel =~ $reIsGlobalPath);
 			
 			opendir(DIR_DEL, $dirDel) or die $!;
 			my @filesWithIDs = ();
@@ -67,7 +67,7 @@ sub updateDelete(@){
 			
 			# get and check if the path is relative or global
 			my $dirUpd = $configs->{$verbund}->{'updates'};
-			$dirUpd = $ini_pathToFachkatalogGlobal . $dirUpd if($dirUpd =~ $re);
+			$dirUpd = $ini_pathToFachkatalogGlobal . $dirUpd if($dirUpd =~ $reIsGlobalPath);
 			
 			opendir(DIR_UPD, $dirUpd) or die $!;
 			my @filesWithUpd = ();
@@ -113,7 +113,7 @@ sub updateDelete(@){
 			for my $updateOrDeletion(@mixedListSorted){
 				
 				# apply deletions and move the deletions afterwords to applied
-				#TODO: wieder gbv spezifisch - hier muss es aber endungsabhängig sein!!
+				#TODO: gbv specific - make independet from ending
 				if($updateOrDeletion =~ /\.del$/){
 
 					&logMessage("INFO", "($verbund) Applying deletions from file $updateOrDeletion to solr index ..");
