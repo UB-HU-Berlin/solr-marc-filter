@@ -40,8 +40,8 @@ read continue
 if [ "$continue" == "YES" ]
 	then
 		echo "Core with all data, index and updates will be removed now!"
-		echo "$urlSolrDefault$coreDel/update?commit=true -H \"Content-Type: text/xml\" --data-binary '<delete><query>*:*</query></delete>'"
-		curl "$urlSolrDefault$coreDel/update?commit=true -H \"Content-Type: text/xml\" --data-binary '<delete><query>*:*</query></delete>'"
+		echo "$urlSolrDefault$coreDel/update?commit=true -H \"Content-Type: text/xml\" --data-binary '<delete><query>*:*</query></delete>'"	#&commit=true
+		curl "$urlSolrDefault$coreDel/update?commit=true -H \"Content-Type: text/xml\" --data-binary '<delete><query>*:*</query></delete>'"	#&commit=true
 		echo "${urlSolrDefault}admin/cores?action=UNLOAD&core=$coreDel"
 		curl "${urlSolrDefault}admin/cores?action=UNLOAD&core=$coreDel"
 		rm -r ../data/$coreDel

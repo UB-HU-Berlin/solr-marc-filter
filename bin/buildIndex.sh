@@ -45,6 +45,7 @@ if [ "$continue" == "YES" ]
 then
 	echo "Will index Core(s) now!"
 	perl ../lib/buildInitialIndexThreading.pl $core
+	echo "Done!\n"
 else
 	echo "Aborted!"
 fi
