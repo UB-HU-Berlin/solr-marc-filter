@@ -11,19 +11,11 @@ fi
 
 ##DEFAULT PATHS
 # needes awk installed
-# TODO Slashes und Whitespaces! vllt perl wrapper?
+# TODO: Slashes and Whitespaces! 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 urlSolrDefault=$(awk -F "= " '/urlSolrDefault/ {print $2}' $DIR/../etc/config.ini)
 pathToSolrCoresDefault=$(awk -F "= " '/pathToSolrCoresDefault/ {print $2}' $DIR/../etc/config.ini)
 pathToSolrMarcDefault=$(awk -F "= " '/pathToSolrMarcDefault/ {print $2}' $DIR/../etc/config.ini)
-
-#sed -i 's/^pathToSolrMarcDefault.?=.+/pathToSolrMarcDefault = $pathToSolrCoresDefault/g' $DIR/../etc/config.ini
-#echo $(awk -F "=" '/pathToSolrMarcDefault/ {print $2}' $DIR/../etc/config.ini)
-#safe_pattern=$(printf '%s\n' "$pathToSolrMarcDefault" | sed 's/[[\.*^$/]/\\&/g')
-#echo $pathToSolrMarcDefault
-#sed -i "s/pathToSolrMarcDefault.?=.?${pathToSolrMarcDefault}/pathToSolrMarcDefault = test333/g" $DIR/../etc/config.ini
-#echo $(awk -F "=" '/pathToSolrMarcDefault/ {print $2}' $DIR/../etc/config.ini)
-#echo $DIR/../etc/config.ini
 
 # check if newCore already exists ..
 while [ -d "../data/$newCore" ];
@@ -103,14 +95,25 @@ case "$updateType" in
 	read oaiUrl
 	coreSpecificString="$coreSpecificString${NEWLINE}oaiUrl = $oaiUrl"
 	
-	echo "Choose OAI specific: oaiMaxRecordsPerUpdatefile"
+	echo "Choose OAI specific: oaiMaxRecordsPerUpdatefile (default 10000)"
 	read oaiMaxRecordsPerUpdatefile
+	
+	if [ "$oaiMaxRecordsPerUpdatefile" == "" ]
+	then 
+		oaiMaxRecordsPerUpdatefile=10000
+	fi
 	
 	while ! [[ $oaiMaxRecordsPerUpdatefile =~ $re ]];
 	do
 	   echo "Choose OAI specific: oaiMaxRecordsPerUpdatefile"
 	   read oaiMaxRecordsPerUpdatefile
 	done
+	
+	if [ oaiMaxRecordsPerUpdatefile == 0 ]
+	do
+		oaiMaxRecordsPerUpdatefile=10000
+	fi
+	
 	coreSpecificString="$coreSpecificString${NEWLINE}oaiMaxRecordsPerUpdatefile = $oaiMaxRecordsPerUpdatefile"	
 	oaiMaxDaysPerUpdatefile=0
 	coreSpecificString="$coreSpecificString${NEWLINE}oaiMaxDaysPerUpdatefile = $oaiMaxDaysPerUpdatefile"
