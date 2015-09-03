@@ -109,7 +109,7 @@ der Humboldt-Universität zu Berlin
 	Lorenz Fichte} 
 \date{\textbf{Stand}: \today \\
 \vspace{1cm}
-\textbf{Version}: 1.0.1 \\
+\textbf{Version}: 1.0.2 \\
 \vspace{1cm}
 }
 
@@ -299,6 +299,7 @@ Diese Skripte befinden sich im Verzeichnis \texttt{./bin} und sind zu meist Alia
 		\item Config::INI		% needs: Mixin::Linewise::Readers,Mixin::Linewise::Writers, PerlIO::utf8_strict __> fine
 %		\item Data::Dumper 		% preinstalled
 		\item HTTP::OAI 		% needs: HTML::HeadParser,HTML::Entities, XML::LibXML --> apt-get install xml2 libxml2 zlib1g-dev, LWP::UserAgent,XML::LibXML::SAX ==> fine
+		\item Date::Simple
 		\item (JSON::Parse )	% 
 		\item LWP::Simple 		% needs: HTML::HeadParser,HTML::Entities
 		\item LWP::UserAgent 	% needs: HTML::HeadParser,HTML::Entities ==> up to date
@@ -459,7 +460,7 @@ Folgende Parameter sind in der Konfigurationsdatei enthalten:
 	
 	\texttt{configPropertiesFile} & data/swb/conf/config.properties & Pfadangabe zur Konfigurationsdatei; sollte nicht verändert werden \\ \hline
 	
-	\texttt{updateIntervalInDays} & 14 & Zeitraum nachdem wieder nach neuen Updates gesucht werden soll, seit dem letzten Update \\ \hline
+	\texttt{updateIntervalInDays} & 6 & Anzahl der Tage nachdem wieder nach neuen Updates gesucht werden soll, seit dem letzten Update, \texttt{6} würde wöchentliche Updates bedeuten, wenn immer zur gleichen Zeit, bspw. Mitternachts nach Updates gesucht wird (\textbf{Hinweis:} da das Herunterladen auch Zeit benötigt, sollte der Parameter immer um eins verringert werden) \\ \hline
 
 	\texttt{updates} & data/swb/updates/ & Pfad in dem die Updates gespeichert werden; sollte nicht verändert werden \\ \hline
 	
@@ -473,13 +474,13 @@ Folgende Parameter sind in der Konfigurationsdatei enthalten:
 	
 	\texttt{check} & 0 & Gibt an, ob der jeweilige Core geupdatet werden soll (\texttt{1}) oder nicht (\texttt{0}). \\ \hline
 	
-	\texttt{lastUpdate} & 2014-11-07T12:39:42Z & Zeitpunkt des letzten durchgeführten Updates.  \\ \hline
+	\texttt{lastUpdate} & 2015-09-03T12:00:00Z & Zeitpunkt des letzten durchgeführten Updates für den jeweiligen Core (dies hat nichts mit dem Datum bzw. der Aktualität des Updates an sich zu tun). Um das letzte heruntergeladene Update zu identifizieren, muss in die letzte Zeile der Datei \texttt{lastUpdates.txt} geschaut werden. \\ \hline
 	
 	\texttt{initial} & data/swb/initialData/ & Pfad, in der sich die initialen Daten für die erstmalige Indizierung befinden. \\ \hline
 	
 	
 	%\textbf{Parameter} & \textbf{Beispiel} & \textbf{Erklärung} \\ \hline
-	\newpage
+	%\newpage
 	\multicolumn{3}{l}{(HTTP-spezifisch:)} \\ \hline
 	
 	\texttt{httpUrl} & http://swblod.bsz-bw.de/od/ & URL unter der die Updates ohne Zugangsbeschränkung oder weitere URL-Parameter erreicht und heruntergeladen werden können. \\ \hline
@@ -714,13 +715,13 @@ Alle Ergebnisse werden standardmäßig unter \texttt{results} als \texttt{filter
 \label{sec:workaround}
 Im Wesentlichen sind folgende Schritte durchzuführen: 
 \begin{enumerate}
-	\item Repository clonen %TODO: (oder letzte Version herunterladen)
+	\item Repository clonen %TODO: (oder letzte veröffentlichte Version herunterladen) Notiz: die letzte Version beinhaltet idR keine ungetesteten Code - stabiler
 	\item[] \texttt{\$ git clone https://github.com/UB-HU-Berlin/solr-marc-filter.git}
 	%TODO: prüfen ob diese Variablen wirklich angegeben werden müssen!
 	\item die unter Abschnitt \ref{sec:subsub:software} genannten CPAN Module installieren (dabei müssen jeweils auch alle Referenzmodule mit installiert, sowie benötigte Systempakete ggf. via apt-get nachinstalliert werden)
 	\begin{itemize}
 		\item prüfen, ob alle Module korrekt installiert wurden: 
-		\item[] \texttt{\$ perl -e ”use Apache::Solr; use Archive::Extract; use Config::INI; use HTTP::OAI; use LWP::Simple; use LWP::UserAgent; use MARC::Batch; use MARC::Field; use MARC::File; use Net::SCP; use Net::SSH; use Sys::Info; use Text::Unidecode; use Time::Piece; use Try::Tiny; use XML::Simple;" }
+		\item[] \texttt{\$ perl -e ”use Apache::Solr; use Archive::Extract; use Config::INI; use Date::Simple, use HTTP::OAI; use LWP::Simple; use LWP::UserAgent; use MARC::Batch; use MARC::Field; use MARC::File; use Net::SCP; use Net::SSH; use Sys::Info; use Text::Unidecode; use Time::Piece; use Try::Tiny; use XML::Simple;" }
 		\item wird kein Fehler geworfen wie \texttt{Can't locate Module in @INC}, sind die Module korrekt installiert
 	\end{itemize}
 	\item Solr herunterladen (Link siehe Abschnitt \ref{sec:subsub:software})
@@ -791,8 +792,9 @@ Im Wesentlichen sind folgende Schritte durchzuführen:
 	\begin{itemize}
 		\item nur auf Ubuntu getestet
 		\item möglicherweise Pfadprobleme etc. unter Windows
-		\item Updates via SCP ausführlich getestet
-		\item Updates via OAI und HTTP nur im geringen Umfang getestet
+		\item Updates via SCP, HTTP ausführlich getestet
+		\item Updates via OAI nur im geringen Umfang getestet
+		\item Updates via OAI nur wenn Schnittstellen-Dateiformat XML
 	\end{itemize}
 	
 	\item Abfragen
