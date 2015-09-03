@@ -1,3 +1,10 @@
+v1.0.2
+- new CPAN module needed (Date::Simple)
+- many bugfixes (mainly in getUpdates.pl)
+- OAI testing
+- OAI now error catching if server or internet connection fails
+- documentation extended for some forgotten parameters
+
 v1.0.1
 - additional HTTP parameter for deletions and applied in scripts
 - Testings for HTTP-Updates with SWB

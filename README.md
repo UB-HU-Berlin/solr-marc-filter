@@ -18,6 +18,7 @@ Diese Projekt benötigt bzw. ist abhängig von folgenden Komponenten (getestet)
     - Archive::Extract
     - Config::INI
     - Data::Dumper
+    - Date::Simple
     - HTTP::OAI
     - (JSON::Parse)
     - LWP::Simple
