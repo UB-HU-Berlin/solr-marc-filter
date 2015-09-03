@@ -81,6 +81,7 @@ sub leadingZeroScalar($){
 	}
 }
 
+## helper function to print Message on screen and in Logfile (if flag == 1)
 sub logMessage($$$){
 	my $type = $_[0];
 	my $text = $_[1];
@@ -90,8 +91,8 @@ sub logMessage($$$){
 	my $flag = $_[2];
 	my $now = &getTimeStr();
 	
-	if($flag && $flag == 0){
-		last;
+	if(defined($flag) && $flag == '0'){
+		return;
 	}
 	
 	# flag = 0 if not defined
@@ -125,7 +126,6 @@ sub uniq {
   return grep { !$seen{$_}++ } @_;
 }
 
-#TODO: check if needed!-> not needed - use Time::Piece
 # function compares two dates of format yyyy-mm-ddThh:mm:ssZ
 # where y: year, m: month, d: day, h: hour, m: minute, s:second
 # T,Z: literal placeholders
