@@ -433,7 +433,6 @@ sub getUpdates(@){
 				# build new file if there are too many updates for the given period
 				if($maxRecordsPerUpdatefile != 0 and $u % $maxRecordsPerUpdatefile == 0 and $u != 0){
 					
-					$n++;
 					print $OUTupd "\n".'</marc:collection>';
 					close $OUTupd;
 					
@@ -442,6 +441,7 @@ sub getUpdates(@){
 					my $newFileName = $path . "updates_" . $firstDatestamp . "_" . $lastDatestamp . ".xml";
 					&renameFile($oldFileName, $newFileName, $verbund);
 					
+					$n++;
 					# make new file for the updates
 					my $filename = "$path"."updates_$from"."_$until"."_$n.$updateFormat";
 					open($OUTupd, "> $filename") or die("ERROR: Could not open $filename file of $verbund: $!");
