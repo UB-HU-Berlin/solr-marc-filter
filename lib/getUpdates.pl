@@ -370,17 +370,17 @@ sub getUpdates(@){
 			&logMessage("DEBUG", "($verbund) maxResultsPerReq: $maxResultsPerReq");
 			
 			# check if the path is relative or global
-			my $path = $configs->{$verbund}->{'updates'};
-			$path = "$ini_pathToFachkatalogGlobal$path" if($path =~ $reIsGlobalPath);
+			my $pathToUpdates = $configs->{$verbund}->{'updates'};
+			$pathToUpdates = "$ini_pathToFachkatalogGlobal$pathToUpdates" if($pathToUpdates =~ $reIsGlobalPath);
 			
-			open(my $OUTupd, "> $path"."updates_$from"."_$until"."_$n.xml") or die("($now) ERROR: ($verbund) Could not open $path"."updates_$from"."_$until.xml: $!\n");
+			open(my $OUTupd, "> $pathToUpdates"."updates_$from"."_$until"."_$n.xml") or die("($now) ERROR: ($verbund) Could not open $pathToUpdates"."updates_$from"."_$until.xml: $!\n");
 			binmode $OUTupd, ":utf8";
-			open(my $OUTdel, "> $path"."deletions_$from"."_$until" . "_" . $d .".txt") or die("($now) ERROR: ($verbund) Could not open $path"."deletions_$from"."_$until.txt: $!\n");
+			open(my $OUTdel, "> $pathToUpdates"."deletions_$from"."_$until" . "_" . $d .".txt") or die("($now) ERROR: ($verbund) Could not open $pathToUpdates"."deletions_$from"."_$until.txt: $!\n");
 			
 			# prepare the xml file for the updates
 			print $OUTupd '<?xml version="1.0" encoding="ISO-8859-1" ?><marc:collection xmlns:marc="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">'."\n";
 			
-			my ($lastDatestamp, $firstDatestamp);
+			my ($firstDatestamp, $lastDatestamp, $lastDatestampUpdatefile);
 			
 			# iterate over all records but only if there is no error
 			while( not ($listRecs->is_error) and my $rec = $listRecs->next){
@@ -437,13 +437,14 @@ sub getUpdates(@){
 					close $OUTupd;
 					
 					# rename the update file - because now we know the timestamp slots
-					my $oldFileName = $path . "updates_" . $from . "_" . $until . "_" . $n . ".xml";
-					my $newFileName = $path . "updates_" . $firstDatestamp . "_" . $lastDatestamp . ".xml";
+					my $oldFileName = $pathToUpdates . "updates_" . $from . "_" . $until . "_" . $n . ".xml";
+					my $newFileName = $pathToUpdates . "updates_" . $firstDatestamp . "_" . $lastDatestamp . ".xml";
 					&renameFile($oldFileName, $newFileName, $verbund);
+					$lastDatestampUpdatefile = $lastDatestamp;
 					
 					$n++;
 					# make new file for the updates
-					my $filename = "$path"."updates_$from"."_$until"."_$n.$updateFormat";
+					my $filename = "$pathToUpdates"."updates_$from"."_$until"."_$n.$updateFormat";
 					open($OUTupd, "> $filename") or die("ERROR: Could not open $filename file of $verbund: $!");
 					binmode $OUTupd, ":utf8";
 					print $OUTupd '<?xml version="1.0" encoding="ISO-8859-1" ?><marc:collection xmlns:marc="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">'."\n";
@@ -451,7 +452,7 @@ sub getUpdates(@){
 					&logMessage("INFO", "($verbund) got updates until $currDatestamp.");
 					
 					close($inOut);
-					open($inOut, ">> $path"."lastUpdates.txt") or die("ERROR: Could not open lastUpdates file of $verbund: $!");
+					open($inOut, ">> $pathToUpdates"."lastUpdates.txt") or die("ERROR: Could not open lastUpdates file of $verbund: $!");
 				}
 				
 				# build new file if there are too many deletions for the given period
@@ -459,58 +460,74 @@ sub getUpdates(@){
 					close($OUTdel);
 					
 					# rename the deletion file - because now we know the timestamp slots
-					my $oldFileName = $path . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
-					my $newFileName = $path . "deletions_" . $firstDatestamp . "_" . $lastDatestamp . ".txt";
+					my $oldFileName = $pathToUpdates . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
+					my $newFileName = $pathToUpdates . "deletions_" . $firstDatestamp . "_" . $lastDatestamp . ".txt";
 					&renameFile($oldFileName, $newFileName, $verbund);
 					
 					# make new file for the deletions
 					$d = scalar(@deletions);
-					my $filename = $path . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
+					my $filename = $pathToUpdates . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
 					$now = &getTimeStr();
 					open($OUTdel, "> $filename") or die("($now) ERROR: ($verbund) Could not open $filename file of $verbund: $!\n");
 				}
 			}
-			
-			# if an error occured log this and rename last updates
+
+			## if an error occured - log this and rename last deletion-file and delete the last update-file
 			if($listRecs->is_error){
+				close $OUTdel;
+				close $OUTupd;
+				
+				# update the config.ini file when the last valid update was downloaded
+				$configs->{$verbund}->{'lastUpdate'} = $lastDatestampUpdatefile;
+				Config::INI::Writer->write_file($configs, $pathConfigIni);
+				
 				my $httpStatus = $listRecs->{_rc};
 				&logMessage("ERROR", "($verbund) OAI-Update failed (HTTP-status: $httpStatus)!");
 				&logMessage("INFO", "($verbund) Not all updates could be downloaded. Try again next time (update will start at last correct update).");
 				
-				# rename the update file - because now we know the timestamp slots
-				&renameFile($path . "updates_" . $from . "_" . $until . "_" . $n . ".xml", 
-							$path . "updates_" . $firstDatestamp . "_" . $lastDatestamp . ".xml", $verbund);
+				# delete the last update file because its propably broken
+				my $badUpdateFile = $pathToUpdates . "updates_" . $from . "_" . $until . "_" . $n . ".xml";
+				&logMessage("INFO", "($verbund) delete last update file $badUpdateFile");
+				system("rm $badUpdateFile");
 				
-				# rename the deletion file - because now we know the timestamp slots
-				&renameFile($path . "deletions_" . $from . "_" . $until . "_" . $d . ".txt", 
-							$path . "deletions_" . $firstDatestamp . "_" . $lastDatestamp . ".txt", $verbund);
+				# if there are deletions - rename the deletion file
+				if(scalar(@deletions) > 0 and scalar(@deletions) % $maxRecordsPerUpdatefile != 0){
+					&renameFile($pathToUpdates . "deletions_" . $from . "_" . $until . "_" . $d . ".txt", 
+								$pathToUpdates . "deletions_" . $firstDatestamp . "_" . $lastDatestamp . ".txt", $verbund);
+				}
+				# if not - delete it
+				else{
+					my $badDeletionFile = $pathToUpdates . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
+					&logMessage("INFO", "($verbund) delete last deletion file $badDeletionFile");
+					system("rm $badDeletionFile");					
+				}
 			}
-			
-			print $OUTupd "\n".'</marc:collection>';
-			print $inOut "$lastDatestamp\n";
-			
-			close $OUTdel;
-			close $OUTupd;
-			close $inOut;
+			## no error
+			else{
+				print $inOut "$lastDatestamp\n";
+				close $inOut;
+				print $OUTupd "\n".'</marc:collection>';
+				close $OUTupd;
+				close $OUTdel;
+				
+				# update the config.ini file when the last update was downloaded
+				$configs->{$verbund}->{'lastUpdate'} = $lastDatestamp;
+				Config::INI::Writer->write_file($configs, $pathConfigIni);
+				
+				# delete the updates or the deletions file if there ain't new updates
+				if(scalar(@deletions) == 0){
+					my $emptyDeletionsFile = $pathToUpdates . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
+					system("rm $emptyDeletionsFile");
+				}
+				if($u == 0){
+					my $emptyUpdatesFile = $pathToUpdates . "updates_" . $from . "_" . $until . "_" . $n . ".xml";
+					system("rm $emptyUpdatesFile");
+				}
+			}
 			
 			&logMessage("INFO", "($verbund) number of deletions: ". scalar(@deletions) . " of $total in total");
 			&logMessage("INFO", "($verbund) number of updates: $u of $total in total");
 			
-			# update the config.ini file when the last update was downloaded
-			$configs->{$verbund}->{'lastUpdate'} = $lastDatestamp;
-			Config::INI::Writer->write_file($configs, $pathConfigIni);
-			
-			# check if path is relative or global (normaly its relative)
-			my $pathToUpdates = $configs->{$verbund}->{'updates'};
-			$pathToUpdates = $ini_pathToFachkatalogGlobal . $configs->{$verbund}->{'updates'} if($configs->{$verbund}->{'updates'} =~ $reIsGlobalPath);
-			
-			# delete the updates or the deletions file if there ain't new updates
-			if(scalar(@deletions) == 0){
-				system("rm $pathToUpdates"."deletions_$from"."_$until.txt");
-			}
-			if($u == 0){
-				system("rm $pathToUpdates"."updates_$from"."_$until.xml");
-			}
 			# unlock the core in config.ini
 			$configs->{$verbund}->{updateIsRunning} = 0;
 			Config::INI::Writer->write_file($configs, $pathConfigIni);
@@ -527,6 +544,6 @@ sub renameFile($$){
 	system("mv $oldFileName $newFileName");
 }
 
-#&getUpdates(("b3kat")); #just for testing
+&getUpdates(("b3kat")); #just for testing
 
 1;
