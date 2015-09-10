@@ -18,6 +18,7 @@ our $reIsGlobalPath;
 
 my @results = ();
 my $configs = Config::INI::Reader->read_file("$FindBin::Bin/../etc/config.ini");
+my $pathConfigIni = "$FindBin::Bin/../etc/config.ini";
 my @verbuende = @ARGV;
 
 my $info = Sys::Info->new();
@@ -40,6 +41,10 @@ foreach my $thr(@threads){
 ## submethod for indexing the records
 sub index(){
 	my $verbund = $_[0];
+
+	# lock the core in config.ini
+	$configs->{$verbund}->{check} = 0;
+	Config::INI::Writer->write_file($configs, $pathConfigIni);
 	
 	## get path and check if it is relative or global
 	my $dirInitial = $configs->{$verbund}->{'initial'};
@@ -77,6 +82,10 @@ sub index(){
 		}
 	}
 	&optimize($verbund);
+	
+	# unlock the core in config.ini
+	$configs->{$verbund}->{check} = 1;
+	Config::INI::Writer->write_file($configs, $pathConfigIni);
 	
 	return 1;
 }
