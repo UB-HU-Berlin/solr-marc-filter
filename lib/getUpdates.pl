@@ -489,18 +489,6 @@ sub getUpdates(@){
 				my $badUpdateFile = $pathToUpdates . "updates_" . $from . "_" . $until . "_" . $n . ".xml";
 				&logMessage("INFO", "($verbund) delete last update file $badUpdateFile");
 				system("rm $badUpdateFile");
-				
-				# if there are deletions - rename the deletion file
-				if(scalar(@deletions) > 0 and scalar(@deletions) % $maxRecordsPerUpdatefile != 0){
-					&renameFile($pathToUpdates . "deletions_" . $from . "_" . $until . "_" . $d . ".txt", 
-								$pathToUpdates . "deletions_" . $firstDatestamp . "_" . $lastDatestamp . ".txt", $verbund);
-				}
-				# if not - delete it
-				else{
-					my $badDeletionFile = $pathToUpdates . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
-					&logMessage("INFO", "($verbund) delete last deletion file $badDeletionFile");
-					system("rm $badDeletionFile");					
-				}
 			}
 			## no error
 			else{
@@ -514,15 +502,34 @@ sub getUpdates(@){
 				$configs->{$verbund}->{'lastUpdate'} = $lastDatestamp;
 				Config::INI::Writer->write_file($configs, $pathConfigIni);
 				
-				# delete the updates or the deletions file if there ain't new updates
-				if(scalar(@deletions) == 0){
-					my $emptyDeletionsFile = $pathToUpdates . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
-					system("rm $emptyDeletionsFile");
-				}
+				&logMessage("INFO", "($verbund) got updates until $lastDatestamp.");
+				
+				# delete empty file if there are no updates
 				if($u == 0){
 					my $emptyUpdatesFile = $pathToUpdates . "updates_" . $from . "_" . $until . "_" . $n . ".xml";
 					system("rm $emptyUpdatesFile");
 				}
+				# .. or rename it
+				else{
+					# rename the update file
+					my $oldFileName = $pathToUpdates . "updates_" . $from . "_" . $until . "_" . $n . ".xml";
+					my $newFileName = $pathToUpdates . "updates_" . $firstDatestamp . "_" . $lastDatestamp . ".xml";
+					&renameFile($oldFileName, $newFileName, $verbund);
+				}
+			}
+			
+			# regardless of whether error or not ..
+			# if there are deletions - rename the deletion file
+			if(scalar(@deletions) > 0 and scalar(@deletions) % $maxRecordsPerUpdatefile != 0){
+				my $oldFileName = $pathToUpdates . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
+				my $newFileName = $pathToUpdates . "deletions_" . $firstDatestamp . "_" . $lastDatestamp . ".txt";
+				&renameFile($oldFileName, $newFileName, $verbund);
+			}
+			# .. or delete it
+			else{
+				my $emptyDeletionFile = $pathToUpdates . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
+				&logMessage("INFO", "($verbund) delete last deletion file $emptyDeletionFile");
+				system("rm $emptyDeletionFile");					
 			}
 			
 			&logMessage("INFO", "($verbund) number of deletions: ". scalar(@deletions) . " of $total in total");
@@ -544,6 +551,6 @@ sub renameFile($$){
 	system("mv $oldFileName $newFileName");
 }
 
-&getUpdates(("b3kat")); #just for testing
+#&getUpdates(("b3kat")); #just for testing
 
 1;
