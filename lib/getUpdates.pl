@@ -11,9 +11,7 @@ use FindBin;
 use HTTP::OAI;
 use LWP::UserAgent;
 use LWP::Simple;
-use Net::SCP;
-use Net::SSH qw(sshopen2);
-use Net::SSH qw(sshopen3);
+use Net::OpenSSH;
 use Text::Unidecode; # use this for wide character in print
 use Time::Piece;
 use WWW::Curl::Easy;
@@ -50,22 +48,23 @@ sub getUpdates(@){
 			next;
 		}
 		
-		if(not $verbund eq "_"){
-			# get the last updates which were made - look up in file
-			my $path = $configs->{$verbund}->{'updates'};
-			
-			# check if the path is relative or global
-			$path = "$ini_pathToFachkatalogGlobal$path" if($path =~ $reIsGlobalPath);
-			
-			open($inOut, "< $path"."lastUpdates.txt") or die("ERROR: Could not open lastUpdates file of $verbund: $!, $path");
-			while(my $currLine = <$inOut>){
-				chomp $currLine;
-				push(@lastUpdates, $currLine);
-			}
-			@lastUpdates = sort @lastUpdates;
-			close $inOut;
-			open($inOut, ">> $path"."lastUpdates.txt") or die("ERROR: Could not open lastUpdates file of $verbund: $!, $path");
+		# skip global ini vars
+		next if $verbund eq '_';
+	
+		# get the last updates which were made - look up in file
+		my $path = $configs->{$verbund}->{'updates'};
+		
+		# check if the path is relative or global
+		$path = "$ini_pathToFachkatalogGlobal$path" if($path =~ $reIsGlobalPath);
+		
+		open($inOut, "< $path"."lastUpdates.txt") or die("ERROR: Could not open lastUpdates file of $verbund: $!, $path");
+		while(my $currLine = <$inOut>){
+			chomp $currLine;
+			push(@lastUpdates, $currLine);
 		}
+		@lastUpdates = sort @lastUpdates;
+		close $inOut;
+		open($inOut, ">> $path"."lastUpdates.txt") or die("ERROR: Could not open lastUpdates file of $verbund: $!, $path");
 		
 		HTTP: {
 			## HTTP
@@ -162,15 +161,15 @@ sub getUpdates(@){
 						close($outFile);
 						
 						# if no error happened
-						if($err != ''){
+						if($err eq ''){
 							print $inOut "$fileName\n";
 							&logMessage("INFO", "($verbund) $fileName successfully downloaded");
 						}
 						# else .. remove file and go to next core
 						else{
-							&logMessage("ERROR", "($verbund) unable to download Updates!");
+							&logMessage("ERROR", "($verbund) unable to download Updates! ($err)");
 							&logMessage("INFO", "($verbund) remove uncomplete file $fileName ..");
-							system("rm $pathToUpdates$fileName");
+							unlink $pathToUpdates.$fileName;
 							$configs->{$verbund}->{updateIsRunning} = 0;
 							Config::INI::Writer->write_file($configs, $pathConfigIni);
 							last HTTP;
@@ -185,7 +184,7 @@ sub getUpdates(@){
 						my $export = $ae->extract(to => "$pathToUpdates") or die $ae->error;
 						
 						&logMessage("INFO", "($verbund) removing downloaded archive $fileName ..");
-						system("rm $pathToUpdates$fileName");
+						unlink $pathToUpdates.$fileName;
 						
 						# write date for the last correct update into ini file
 						$configs->{$verbund}->{'lastUpdate'} = $now;
@@ -199,116 +198,149 @@ sub getUpdates(@){
 				$configs->{$verbund}->{updateIsRunning} = 0;
 				Config::INI::Writer->write_file($configs, $pathConfigIni);
 			}
-		
 		}
-	
+		
 		SSH: {
 			## SSH, SCP
 			if($configs->{$verbund}->{'updateType'} eq "ssh"){
 				$configs->{$verbund}->{updateIsRunning} = 1;
 				Config::INI::Writer->write_file($configs, $pathConfigIni);
 				
+				# path to private key
+				my $privateKeyPath = $ENV{"HOME"} . "/.ssh/id_rsa";
+
+				if(-e $privateKeyPath){
+					&logMessage("INFO", "($verbund) using private key $privateKeyPath for public key authentication on remote server");
+				}
+				else{
+					&logMessage("ERROR", "($verbund) cannot find private key $privateKeyPath for public key authentication");
+					last SSH;
+				}				
+				
 				# get the updates and deletions via scp
+				my @allFiles;
 				my @allUpdateFiles;
 				my $host = $configs->{$verbund}->{'sshHost'};
 				my $user = $configs->{$verbund}->{'sshUser'};
 				my $pathToSshData = $configs->{$verbund}->{'sshDataPath'};
 				my $newUpdatesFound = 0;
 				
-				# read SSH Variables from fachkatalog/etc/env
+				# read SSH Variables from etc/env
 				open(my $FILE, "< $ini_pathToFachkatalogGlobal"."etc/env" ) or die "Could not open File $!";
 				my ($SSH_AGENT_PID, $SSH_AUTH_SOCK);
 				
 				while(my $line = <$FILE>){
-				
 					if($line =~ /SSH_AGENT_PID=(\d+)/){
 						$SSH_AGENT_PID = $1;
 					}
-				
 					elsif($line =~ /SSH_AUTH_SOCK=(.+)/){
 						$SSH_AUTH_SOCK = $1;
 					}
 				}
 				
-				# setting important SSH Env Vars 
+				# set important SSH Env vars
 				$ENV{"SSH_AGENT_PID"} = $SSH_AGENT_PID;
 				$ENV{"SSH_AUTH_SOCK"} = $SSH_AUTH_SOCK;
 				
+				# open an ssh session
+				my $ssh = Net::OpenSSH->new($user . "@" . $host,
+					key_path => $privateKeyPath	
+				);
+				if($ssh->error){
+					&logMessage("ERROR", "($verbund) Couldn't establish SSH connection! ". $ssh->error);
+					$configs->{$verbund}->{updateIsRunning} = 0;
+					Config::INI::Writer->write_file($configs, $pathConfigIni);
+					last SSH;
+				}
+				
+				# run command on remote server
 				my $cmd = "ls $pathToSshData";
-				sshopen2("$user\@"."$host", *READER, *WRITER, "$cmd") || die  &logMessage("ERROR", "($verbund) sshError: $!");
+				@allFiles = $ssh->capture($cmd);
+				if($ssh->error){
+					&logMessage("ERROR", "($verbund) Couldn't run command on remote! ". $ssh->error);
+					$configs->{$verbund}->{updateIsRunning} = 0;
+					Config::INI::Writer->write_file($configs, $pathConfigIni);
+					last SSH;
+				}
+				chomp @allFiles;
 				
-				&logMessage("WARNING", "($verbund) all files in target sshDataPath will be added!") if not $verbund eq 'gbv';
-				
-				while (<READER>) {
-					chomp();
-					my $debug = $_;
-					
-					if($_ =~ /.*Datei oder Verzeichnis nicht gefunden/){
-						&logMessage("WARNING", "($verbund) path $pathToSshData could not be found!");
-						&logMessage("WARNING", "($verbund) Skipping $verbund ..");
-						$configs->{$verbund}->{updateIsRunning} = 0;
-						Config::INI::Writer->write_file($configs, $pathConfigIni);
-						last SSH;
-					}
-					#TODO: very specific for 'gbv' -> make more independent
+				# check which files to download
+				foreach my $updateFile(@allFiles){
+					# core specific handling
 					if($verbund eq 'gbv'){
-						if($_ =~ /^gbv.+delete.+\.txt$/ or $_ =~ /^gbv.+update.+\.mrc\.tar\.gz$/){
-					    	push(@allUpdateFiles, $_);
+						if($updateFile =~ /^gbv.+delete.+\.txt$/ or $updateFile =~ /^gbv.+update.+\.mrc\.tar\.gz$/){
+					    	push(@allUpdateFiles, $updateFile);
 						}
 					}
+					# in all other cases
 					else{
-						$_ =~ /^.+\.(txt|mrc|xml|tar|tar\.gz)$/;
-						push(@allUpdateFiles, $_);
+						&logMessage("WARNING", "($verbund) invalid value for updateFormat in config.ini") if(not $updateFormat =~ /(mrc|xml)/);
+						
+						# Updates must have form File.txt(.tar|.tar.gz) or File.mrc(.tar|.tar.gz) or File.xml(.tar|.tar.gz)
+						if( $updateFile =~ /^.+\.(txt|$updateFormat)(\.(tar|tar\.gz))?$/){
+							push(@allUpdateFiles, $updateFile);
+						}
 					}
 				}
-				close(READER);
-				close(WRITER);
-				
 				@allUpdateFiles = sort(@allUpdateFiles);
 				
-				# get the difference of AllUpdates-LastUpdates=LatestUpdates
+				# just download the new updates (and not also the lastUpdates)
 				my %lastUp = map {$_ => 1} @lastUpdates;
 				my @updates = grep {not $lastUp{$_}} @allUpdateFiles;
 				
+				# if there are updates left - they must be new updates
 				if(@updates){
 					&logMessage("INFO", "($verbund) Found ". scalar(@updates) ." new Updates for $verbund: @updates");
 					push(@verbuendeWithNewUpdates, $verbund);
-					$newUpdatesFound = 1;
+					
+					
+					# now download the updates
+					foreach my $fileName(@updates){
+						my $latestUpdate = $fileName;
+						&logMessage("INFO", "($verbund) downloading $pathToSshData$fileName from $host ..");
+						$ssh->scp_get({verbose => 1, timeout => 120}, $pathToSshData.$fileName, $pathToUpdates);
+												
+						if($ssh->error){
+							my $brokenFile = $pathToUpdates.$fileName;
+							&logMessage("ERROR", "($verbund) Error while trying to download file $fileName from server: ". $ssh->error);
+							
+							# remove fileName from list so we will not try to unpack it
+							@updates = grep { $_ ne  $fileName} @updates;
+							
+							# remove file from dir if it exists
+							unlink $brokenFile if(-e $brokenFile);
+						}
+						else{
+							print $inOut "$latestUpdate\n";
+						}
+					}
 				}
 				else{
 					&logMessage("INFO", "($verbund) is up to date ..");
 					$configs->{$verbund}->{updateIsRunning} = 0;
 					Config::INI::Writer->write_file($configs, $pathConfigIni);
-					next;
+					last SSH;
 				}
-				
-				# now download the updates if they ain't in the lastUpdates file
-				my $scp = Net::SCP->new($host);
-				$scp->login();
-				
-				foreach my $fileName(@updates){
-					my $latestUpdate = $fileName;
-					&logMessage("INFO", "($verbund) downloading $pathToSshData$fileName from $host ..");
-					$scp->cwd($pathToSshData);
-					$scp->get("$fileName", $pathToUpdates) or die $scp->{errstr};
-					print $inOut "$fileName\n";
-				}
-				$scp->quit();
 				
 				# now extract all downloaded files and delete the .tgz afterwords
 				foreach my $fileName(@updates){
-					if($fileName =~ /.+\.tar\.gz$/){
+					if($fileName =~ /.+\.(tar|tar\.gz)$/){
 						&logMessage("INFO", "($verbund) extracting $fileName .. ");
 						$Archive::Extract::PREFER_BIN = 1;
 						my $ae = Archive::Extract->new( archive => "$pathToUpdates$fileName");
-						my $export = $ae->extract(to => $pathToUpdates) or die $ae->error, $pathToUpdates;
+						my $export = $ae->extract(to => $pathToUpdates) or print $!;
+						
+						if($ae->error){
+							&logMessage("ERROR", "($verbund) unable to extract archive $pathToUpdates$fileName !");
+							next;
+						}
 						
 						&logMessage("INFO", "($verbund) removing downloaded archive $fileName ..");
-						system("rm $pathToUpdates$fileName");
+						unlink $pathToUpdates.$fileName;
 					}
 				}
 				
-				if($newUpdatesFound){
+				if(@updates){
 					# update the latest updates date in the ini file
 					$configs->{$verbund}->{'lastUpdate'} = &getTimeStr();
 					Config::INI::Writer->write_file($configs, $pathConfigIni);
@@ -366,7 +398,7 @@ sub getUpdates(@){
 					&logMessage("INFO", "($verbund) Change maxRecordsPerUpdatefile or maxDaysPerUpdatefile in config.ini and restart update!");
 					$configs->{$verbund}->{updateIsRunning} = 0;
 					Config::INI::Writer->write_file($configs, $pathConfigIni);
-					next;
+					last OAI;
 				}
 				
 				# OAI paramters
@@ -428,7 +460,7 @@ sub getUpdates(@){
 				# prepare the xml file for the updates
 				print $OUTupd '<?xml version="1.0" encoding="ISO-8859-1" ?><marc:collection xmlns:marc="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">'."\n";
 				
-				my ($firstDatestamp, $lastDatestamp, $lastDatestampUpdatefile);
+				my ($firstDatestamp, $firstDatestampDel, $lastDatestamp, $lastDatestampUpdatefile);
 				
 				# iterate over all records but only if there is no error
 				while( not ($listRecs->is_error) and my $rec = $listRecs->next){
@@ -438,6 +470,8 @@ sub getUpdates(@){
 					my $currDatestamp = $rec->header->datestamp;
 					
 					$firstDatestamp = $currDatestamp if($total % $maxRecordsPerUpdatefile == 1);
+					$firstDatestampDel = $currDatestamp if($total == 1);  # just set it once!
+					
 					$lastDatestamp = $currDatestamp; 
 					
 					# either we have deletions
@@ -454,7 +488,7 @@ sub getUpdates(@){
 						# note: b3kat (http://www.bib-bvb.de/web/b3kat/open-data) does not print the oai-identifier 
 						#		into the xml records - so it is needed to print the id into field 999 manually because
 						#		this id is used to index the update-record when it is pushed to the Solr-Core
-						if($verbund =~ /b3kat/i){
+						if($verbund eq "b3kat"){
 							my $recXML = $rec->{metadata}->{current}->firstChild->firstChild;
 							$recXML =~ s/<\/marc:record>$/<marc:datafield tag="999" ind1=" " ind2=" "><marc:subfield code="a">$currID<\/marc:subfield><\/marc:datafield><\/marc:record>/;
 							print $OUTupd $recXML;
@@ -498,10 +532,6 @@ sub getUpdates(@){
 						print $OUTupd '<?xml version="1.0" encoding="ISO-8859-1" ?><marc:collection xmlns:marc="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">'."\n";
 						print $inOut "$currDatestamp\n";
 						&logMessage("INFO", "($verbund) got updates until $currDatestamp.");
-						
-						# not needed to close and open again..
-						#close($inOut);
-						#open($inOut, ">> $pathToUpdates"."lastUpdates.txt") or die("ERROR: Could not open lastUpdates file of $verbund: $!");
 					}
 					
 					# build new file if there are too many deletions for the given period
@@ -510,8 +540,10 @@ sub getUpdates(@){
 						
 						# rename the deletion file - because now we know the timestamp slots
 						my $oldFileName = $pathToUpdates . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
-						my $newFileName = $pathToUpdates . "deletions_" . $firstDatestamp . "_" . $lastDatestamp . ".txt";
+						my $newFileName = $pathToUpdates . "deletions_" . $firstDatestampDel . "_" . $lastDatestamp . ".txt";
 						&renameFile($oldFileName, $newFileName, $verbund);
+						
+						$firstDatestampDel = $lastDatestamp;
 						
 						# make new file for the deletions
 						$d = scalar(@deletions);
@@ -523,8 +555,6 @@ sub getUpdates(@){
 	
 				## if an error occured - log this and rename last deletion-file and delete the last update-file
 				if($listRecs->is_error){
-					close $OUTdel;
-					close $OUTupd;
 					
 					# update the config.ini file when the last valid update was downloaded
 					$configs->{$verbund}->{'lastUpdate'} = $lastDatestampUpdatefile;
@@ -537,15 +567,12 @@ sub getUpdates(@){
 					# delete the last update file because its propably broken
 					my $badUpdateFile = $pathToUpdates . "updates_" . $from . "_" . $until . "_" . $n . ".xml";
 					&logMessage("INFO", "($verbund) delete last update file $badUpdateFile");
-					system("rm $badUpdateFile");
+					unlink $badUpdateFile;
 				}
 				## no error
 				else{
 					print $inOut "$lastDatestamp\n";
-					close $inOut;
 					print $OUTupd "\n".'</marc:collection>';
-					close $OUTupd;
-					close $OUTdel;
 					
 					# update the config.ini file when the last update was downloaded
 					$configs->{$verbund}->{'lastUpdate'} = $lastDatestamp;
@@ -556,7 +583,7 @@ sub getUpdates(@){
 					# delete empty file if there are no updates
 					if($u == 0){
 						my $emptyUpdatesFile = $pathToUpdates . "updates_" . $from . "_" . $until . "_" . $n . ".xml";
-						system("rm $emptyUpdatesFile");
+						unlink $emptyUpdatesFile;
 					}
 					# .. or rename it
 					else{
@@ -566,6 +593,9 @@ sub getUpdates(@){
 						&renameFile($oldFileName, $newFileName, $verbund);
 					}
 				}
+				close $inOut;
+				close $OUTdel;
+				close $OUTupd;
 				
 				# regardless of whether error or not ..
 				# if there are deletions - rename the deletion file
@@ -578,7 +608,7 @@ sub getUpdates(@){
 				else{
 					my $emptyDeletionFile = $pathToUpdates . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
 					&logMessage("INFO", "($verbund) delete last deletion file $emptyDeletionFile");
-					system("rm $emptyDeletionFile");					
+					unlink $emptyDeletionFile;					
 				}
 				
 				&logMessage("INFO", "($verbund) number of deletions: ". scalar(@deletions) . " of $total in total");
@@ -598,10 +628,11 @@ sub renameFile($$){
 	my $oldFileName = $_[0];
 	my $newFileName = $_[1];
 	my $verbund = $_[2];
-	&logMessage("SYS", "($verbund) mv $oldFileName $newFileName");
-	system("mv $oldFileName $newFileName");
+	&logMessage("SYS", "($verbund) rename $oldFileName -> $newFileName");
+	rename $oldFileName, $newFileName;
 }
 
-&getUpdates(("swb")); #just for testing
-
+if($ARGV[0]){
+	&getUpdates($ARGV[0]);
+}
 1;
