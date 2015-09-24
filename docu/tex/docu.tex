@@ -47,6 +47,9 @@ top=2.5cm, bottom=2.5cm]{geometry}
 %Doppelter Zeilenabstand
 \renewcommand{\baselinestretch}{1.50}\normalsize
 
+% striketrough
+\usepackage[normalem]{ulem}
+% 
 \usepackage{alltt}
 
 %Silbentrennung
@@ -73,6 +76,9 @@ top=2.5cm, bottom=2.5cm]{geometry}
 \renewcommand{\footnoterule}{\rule{160mm}{0.1mm}{\vspace*{+0.3mm}}}
 \setlength{\footnotesep}{0.5cm}
 \setlength{\skip\footins}{0.1cm}
+%\usepackage[hang]{footmisc}
+%\setlength{\footnotemargin}{3mm}
+
 
 % Absatzeinruecken
 \setlength{\parindent}{0cm}
@@ -109,7 +115,8 @@ der Humboldt-Universität zu Berlin
 	Lorenz Fichte} 
 \date{\textbf{Stand}: \today \\
 \vspace{1cm}
-\textbf{Version}: 1.0.2 \\
+\textbf{Version}: 1.0.3 \\
+%TODO: new release 1.0.3
 \vspace{1cm}
 }
 
@@ -148,7 +155,7 @@ Um die zuvor genannten Ziele zu erreichen und um das System flexibel zu halten, 
 
 Mit dem aktuellen Stand dieser Suite ist es möglich, sowohl MARC- als auch MARC-XML-Daten in eine Apache Solr Index zu übertragen und diesen für die Filterung der Daten zu benutzen. Als Abfragesprache, in welcher die Filter definiert werden, wird die Solr-Query-Syntax\footnote{siehe \url{https://cwiki.apache.org/confluence/display/solr/The+Standard+Query+Parser} bzw. \url{http://wiki.apache.org/solr/SolrQuerySyntax}} verwendet, welche der Lucene-Syntax\footnote{\url{http://lucene.apache.org/core/2_9_4/queryparsersyntax.html}} ähnlich ist. Diese Filter wie auch die Konfiguration von Pfaden usw. wird über Konfigurationsdateien erledigt. \\
 Die Indizierung der Basis-Daten eines jeden Verbundes bzw. einer jeden Datenquelle erfolgt in einem eigenen Solr-Core. Dies bietet den Vorteil, spezifische Anpassungen beim Indizieren vornehmen zu können oder auch nur eine bestimmte Quelle abzufragen ohne den kompletten Index zu durchsuchen. \\
-Für Updates und Löschungen von Titeldaten können OAI-Schnittstellen abgefragt oder Dateien via SSH bezogen werden. Dies kann automatisch erfolgen und wird über einen Scheduler gesteuert, welcher nur zyklisch getriggert werden muss. \\
+Für Updates und Löschungen von Titeldaten können OAI-Schnittstellen\footnote{siehe \url{https://www.openarchives.org/OAI/openarchivesprotocol.html}} abgefragt oder Dateien via SSH bezogen werden. Dies kann automatisch erfolgen und wird über einen Scheduler gesteuert, welcher nur zyklisch getriggert werden muss. \\
 Die verwendeten Bestandteile wurden so gewählt, dass eine Portierung nach MS Windows ebenfalls möglich ist. Allerdings sind bei einer Portierung das Handling von Pfadeangaben und in Skripten genutzte Konsolen-Programme zu prüfen.
 
 \newpage
@@ -166,7 +173,7 @@ Da alle versuchten SolrMarc-Versionen nicht mit aktuellen Apache Solr Versionen 
 \paragraph{BeanShell-Erweiterungen}
 \label{para:beanShell}
 Bei den Skripten handelt es sich um Erweiterungen, die es ermöglichen, die in den Marc-Daten enthaltenen Daten für das Indizieren vorzubereiten. D.h. es werden spezifische Marc-Felder voruntersucht und in spezielle Solr-Felder exportiert. Verwendet werden die Skripte in \nameref{para:index.properties}. \\ %./data/core/conf/index.properties
-Der Ordner \texttt{index\_scripts} in dem sich die Skripte befinden müssen, liegt im SolrMarc Unterverzeichnis \texttt{local\_build}. Die Skripte sind in Java-Code geschrieben und werden im Folgenden erklärt.
+Der Ordner \texttt{index\_scripts} in dem sich die Skripte befinden müssen, liegt im SolrMarc Unterverzeichnis \texttt{local\_build}. Die Skripte sind in Java-Syntax geschrieben und werden im Folgenden erklärt.
 
 \subparagraph{getCategory.bsh} 
 Mit dem Skript ist es möglich die entsprechenden Klassifikationen aus den Marc-Datensätzen zu extrahieren. In Marc-Datensätzen befinden sich die Klassifikationen im Feld 084 mit den entsprechenden Unterfeldern. Würde man nur diese Felder in Solr via SolrMarc (ohne getCategory.bsh) indizieren, wäre es nicht mehr möglich, die jeweiligen Klassifikationen zu den Klassifikationsnummern zuzuordnen, da es sehr viele verschiedene Klassifikationen\footnote{\url{http://www.loc.gov/standards/sourcelist/classification.html}} gibt und sich diese teils ähneln (beispielsweise kann es eine Klassifikation BCL 18.00 geben und SDNB 18). \\
@@ -195,8 +202,7 @@ Dieses Skript ist eine Erweiterung des bereits vorhanden Skripts vom Hebis\footn
 		\item 'z' Zeitschlagwort 
 	\end{itemize}
 \end{itemize}
-%TODO: stimmt das wirklich??
-Hinweis: die Bean-Shell Erweiterungen müssen aktuell noch händisch in den SolrMarc Ordner hineinkopiert werden. 
+Hinweis: die Bean-Shell Erweiterungen müssen händisch in den SolrMarc Ordner hineinkopiert werden. 
 
 \subsubsection{Perl}
 Die entwickelten Perl-Skripte dienen zur Abwicklung der administrativen Prozesse. Sie lesen die Konfigurationen ein, indizieren einen neuen Solr-Core oder steuern die Update-Prozesse über einen Scheduler. Sie erzeugen ebenso die Anfragen an Solr, welche die gewünschten Filter enthält und legen die Ergebnismenge als Dateien ab. Teilweise werden Prozesse auch über mehrere Threads verteilt um eine optimale Performance zu erreichen.
@@ -261,7 +267,6 @@ Diese Skripte befinden sich im Verzeichnis \texttt{./bin} und sind zu meist Alia
 \paragraph{\texttt{startSshAgent.sh}}
 \label{sec:para:startSshAgent}
 \begin{itemize}
-	%TODO: env Datei wird erstellt..
 	\item Es handelt sich um ein ausführbares Bash-Skript, was parameterlos gerufen wird und dazu dient, den ssh-agent zu starten, sodass bei erstmaligem Aufruf nach Neustart, nach dem Private-Key-Passphrase gefragt wird. Es speichert die Umgebungsvariablen, die bei einer Public-Private-Key Authentifizierung notwendig sind in die Datei \texttt{./etc/env} ab, sodass für zukünftige Verbindungsanfragen kein Kennwort mehr eingegeben werden muss. Wichtig hierbei ist, dass cron-basierte Prozesse, die eine Public-Private-Key Authentifizierung zum Server benötigen (wie beispielsweise die Updates via SCP) nur automatisiert funktionieren, wenn zuvor dieses Skript ausgeführt wurde.
 	\item Aufruf: \texttt{\$ ./startSshAgent.sh} \\
 \end{itemize}
@@ -288,7 +293,7 @@ Diese Skripte befinden sich im Verzeichnis \texttt{./bin} und sind zu meist Alia
 	\end{itemize}
 	\item Apache Solr 4.8.1 \footnote{\url{https://archive.apache.org/dist/lucene/solr/4.8.1/solr-4.8.1.tgz}}
 	\item SolrMarc SVN Revision r17461\footnote{\url{https://code.google.com/p/solrmarc/source/checkout}}
-	\item Perl 5.14.2 mit folgenden Modulen (nachinstallierbar via CPAN\footnote{\url{http://www.cpan.org/}})
+	\item Perl 5.14.2 mit folgenden Modulen (nachinstallierbar via CPAN\footnote{\url{http://www.cpan.org/}}), (entsprechend abhängige Untermodule müssen selbstständig nachinstalliert werden)
 	\begin{itemize}
 	%TODO: Kommandos sollten als Superuser ausgeführt werden..
 	%TODO: dazu muss packet make installiert sein (apt-get install make)
@@ -299,23 +304,27 @@ Diese Skripte befinden sich im Verzeichnis \texttt{./bin} und sind zu meist Alia
 		\item Config::INI		% needs: Mixin::Linewise::Readers,Mixin::Linewise::Writers, PerlIO::utf8_strict __> fine
 %		\item Data::Dumper 		% preinstalled
 		\item HTTP::OAI 		% needs: HTML::HeadParser,HTML::Entities, XML::LibXML --> apt-get install xml2 libxml2 zlib1g-dev, LWP::UserAgent,XML::LibXML::SAX ==> fine
-		\item Date::Simple
+		%TODO: neu
+		\item \textbf{Date::Simple}
 		\item (JSON::Parse )	% 
 		\item LWP::Simple 		% needs: HTML::HeadParser,HTML::Entities
 		\item LWP::UserAgent 	% needs: HTML::HeadParser,HTML::Entities ==> up to date
 		\item MARC::Batch 		% fine
 		\item MARC::Field 		% up to date
 		\item MARC::File 		% up to date
-		\item Net::SCP 			% fine
-		\item Net::SSH 			% up to date
+		%nicht mehr benötigt..
+		\item \sout{Net::SCP}	% fine
+		\item \sout{Net::SSH}	% up to date
+		%TODO: neu
+		\item \textbf{Net::OpenSSH}
 		\item Sys::Info 		% needs: Sys::Info::Driver::Linux - fine, Unix::Processors ==> fine
 		\item Text::Unidecode 	% fine
 		\item Time::Piece 		% up to date
 		\item Try::Tiny 		% fine
 		\item XML::Simple		% needs: XML::Parser --> apt-get install expat libexpat1 libexpat1-dev, XML::SAX::Expat --> fine ==> fine
+		\item WWW::Curl			% needs: needs libcurl4-openssl-dev
 	\end{itemize}
 \end{itemize}
-
 
 \subsection{Verzeichnis-Struktur}
 \label{sec:verzeichnis}
@@ -534,7 +543,7 @@ Es handelt sich hier um eine von SolrMarc benötigte Core-spezifische Konfigurat
 
 \paragraph{./data/core/conf/index.properties}
 \label{para:index.properties}
-Es handelt sich hier um eine von SolrMarc benötigte Core-spezifische Konfigurationsdatei, in der aufgelistet wird, welche Felder der Marc-Datensätze indiziert werden sollen. Dabei können die von SolrMarc bereitgestellten Methoden, wie z.B. \texttt{getAllAlphaSubfields} und \texttt{FullRecordAsMARC} aber auch die eigens angefertigten BeanShell-Erweiterungen verwendet werden. Hierbei ist zu beachten: es können immer nur solche Felderindiziert werden, die bekannte Funktionen verwenden und die auch in dem Solr-Schema definiert sind. Im folgenden Konfigurationsbeispiel müssen also die Skripte \texttt{getCategory.bsh} und \texttt{topicFacet.bsh} existieren (siehe \hyperref[para:beanShell]{BeanShell-Erweiterungen}). \\ \\
+Es handelt sich hier um eine von SolrMarc benötigte Core-spezifische Konfigurationsdatei, in der aufgelistet wird, welche Felder der Marc-Datensätze indiziert werden sollen. Dabei können die von SolrMarc bereitgestellten Methoden, wie z.B. \texttt{getAllAlphaSubfields} und \texttt{FullRecordAsMARC} aber auch die eigens angefertigten BeanShell-Erweiterungen verwendet werden. Hierbei ist zu beachten: es können immer nur solche Felder indiziert werden, die bekannte Funktionen verwenden und die auch in dem Solr-Schema definiert sind. Im folgenden Konfigurationsbeispiel müssen also die Skripte \texttt{getCategory.bsh} und \texttt{topicFacet.bsh} mit den entsprechenden Funktionen existieren (siehe \hyperref[para:beanShell]{BeanShell-Erweiterungen}). \\ \\
 \textbf{Konfigurationsbeispiel \texttt{index.properties}} 
 \lstinputlisting{index.properties.txt}
 
@@ -715,17 +724,20 @@ Alle Ergebnisse werden standardmäßig unter \texttt{results} als \texttt{filter
 \label{sec:workaround}
 Im Wesentlichen sind folgende Schritte durchzuführen: 
 \begin{enumerate}
-	\item Repository clonen %TODO: (oder letzte veröffentlichte Version herunterladen) Notiz: die letzte Version beinhaltet idR keine ungetesteten Code - stabiler
+	\item Repository clonen (neueste Version)
 	\item[] \texttt{\$ git clone https://github.com/UB-HU-Berlin/solr-marc-filter.git}
+	\item[] oder letzte veröffentlichte Version herunterladen
+	\item[] \texttt{\$ wget https://github.com/UB-HU-Berlin/solr-marc-filter/archive/v1.0.3.tar.gz}
+	
 	%TODO: prüfen ob diese Variablen wirklich angegeben werden müssen!
-	\item die unter Abschnitt \ref{sec:subsub:software} genannten CPAN Module installieren (dabei müssen jeweils auch alle Referenzmodule mit installiert, sowie benötigte Systempakete ggf. via apt-get nachinstalliert werden)
+	\item die unter Abschnitt \ref{sec:subsub:software} genannten CPAN Module installieren (dabei müssen jeweils auch alle Referenzmodule mit installiert, sowie benötigte Systempakete ggf. via \texttt{apt-get} nachinstalliert werden)
 	\begin{itemize}
 		\item prüfen, ob alle Module korrekt installiert wurden: 
-		\item[] \texttt{\$ perl -e ”use Apache::Solr; use Archive::Extract; use Config::INI; use Date::Simple, use HTTP::OAI; use LWP::Simple; use LWP::UserAgent; use MARC::Batch; use MARC::Field; use MARC::File; use Net::SCP; use Net::SSH; use Sys::Info; use Text::Unidecode; use Time::Piece; use Try::Tiny; use XML::Simple;" }
-		\item wird kein Fehler geworfen wie \texttt{Can't locate Module in @INC}, sind die Module korrekt installiert
+		\item[] \texttt{\$ perl -e ”use Apache::Solr; use Archive::Extract; use Config::INI; use Date::Simple, use HTTP::OAI; use LWP::Simple; use LWP::UserAgent; use MARC::Batch; use MARC::Field; use MARC::File; use Net::OpenSSH; use Sys::Info; use Text::Unidecode; use Time::Piece; use Try::Tiny; use XML::Simple;" }
+		\item wird kein Fehler geworfen wie beispielsweise \texttt{Can't locate Module in @INC}, sind die Module korrekt installiert
 	\end{itemize}
 	\item Solr herunterladen (Link siehe Abschnitt \ref{sec:subsub:software})
-	\item zum Herunterladen und konfigurieren von SolrMarc \texttt{\$ ./prepareSolrMarc.sh} ausführen oder alternativ Schritte manuell durchführen:
+	\item zum Herunterladen und Konfigurieren von SolrMarc Skript \texttt{\$ ./prepareSolrMarc.sh} ausführen oder alternativ Schritte manuell durchführen:
 	\begin{enumerate}
 		\item SolrMarc SVN checkout im Überverzeichnis von solr-marc-filter ausführen
 		\item[] \texttt{\$ svn checkout http://solrmarc.googlecode.com/svn/trunk/ solrmarc}
@@ -752,12 +764,12 @@ Im Wesentlichen sind folgende Schritte durchzuführen:
 	\item Solr Instanz starten (\texttt{\$ java -jar -Xmx2048M -Xms512M start.jar})
 	\item neuen Solr-Core erstellen via \hyperref[sec:para:createCore]{\texttt{\$ ./createCore.sh}} und Eingabeaufforderungen folgen
 	\item (optional) fehlerhaft oder testweise angelegten Solr-Core löschen via \hyperref[sec:para:removeCore]{\texttt{\$ ./removeCore.sh}} und Eingabeaufforderungen folgen
-	\item Initialdaten (Marc- oder Marc-XML-Daten) in das automatisch angelegten Core-Verzeichnis \texttt{solr-marc-filter/data/coreX/initialData/} hineinkopieren
-	\item in \hyperref[para:index.properties]{\texttt{index.properties}} festlegen welche Felder für diesen Core indiziert werden sollen und \texttt{"CHANGE\_THIS\_NAME"} in gewünschten Namen des Cores ändern (sinnvollerweise derselbe Name, wie beim Erstellen des Cores zuvor)
+	\item Initialdaten (Marc- oder Marc-XML-Daten) in das automatisch angelegten Core-Verzeichnis \texttt{solr-marc-filter/data/coreX/initialData/} hineinkopieren (diese werden später indiziert)
+	\item in \hyperref[para:index.properties]{\texttt{index.properties}} festlegen, welche Felder für diesen Core indiziert werden sollen und \texttt{"CHANGE\_THIS\_NAME"} in gewünschten Namen des Cores ändern (sinnvollerweise derselbe Name, wie beim Erstellen des Cores zuvor)
 	%\item \texttt{indexfile}
 	\item Daten im Solr-Core indizieren via \hyperref[sec:para:buildIndex]{\texttt{\$ ./buildIndex.sh}}
-	\item (optional) in Vorbereitung auf Updates ssh-agent starten via \hyperref[sec:para:startSshAgent]{\texttt{\$ ./startSshAgent.sh}}
-	\item (optional) alle alten Updates in Solr-Core einpflegen via \hyperref[sec:para:runUpdates]{\texttt{\$ ./runUpdates.sh}}
+	\item (optional) alle alten Updates in Solr-Core einpflegen via \hyperref[sec:para:runUpdates]{\texttt{\$ ./runUpdates.sh}} oder automatische Updates per Cron-Job einrichten (siehe nächste Punkte)
+	\item (optional) in Vorbereitung auf automatische Updates ssh-agent starten via \hyperref[sec:para:startSshAgent]{\texttt{\$ ./startSshAgent.sh}} und ggf. Passwort eingeben
 	\item (optional) Cron-Job für Auto-Updates einrichten, welcher regelmäßig (beispielsweise täglich um Mitternacht) das Skript \texttt{runUpdates.sh} startet
 	\begin{itemize}
 		\item Crontab öffnen: \texttt{\$ crontab -e}
@@ -771,6 +783,51 @@ Im Wesentlichen sind folgende Schritte durchzuführen:
 %\subsection{title}
 
 %TODO.. ausführlicher!
+% % % % % % % % % % % % % % Troubleshooting
+\newpage
+\section{Troubleshooting}
+\subsection{Warnings}
+\texttt{WARNING: (Core) will not be checked for updates due to check=0!}\\
+Updates werden nur durchgeführt, wenn in \texttt{config.ini} das Flag \texttt{check=1} gesetzt ist. Falls dies nicht der Fall ist, kann es sein, dass gerade die Initialdaten für den Core in das Solr-System eingespielt werden.
+
+\texttt{WARNING: (Core) update already in progress and locked by config.ini}\\
+Updates werden nur durchgeführt, wenn gerade keine weiteren Updates für den Core heruntergeladen oder eingespielt werden (\texttt{updateIsRunning=0} in \texttt{config.ini}). Falls keine Updates durchgeführt werden und diese Nachricht trotzdem erscheint, muss der Wert manuell zurückgesetzt werden.
+
+\texttt{WARNING: (Core) ignore File (FILE) for update!}\\
+Das heruntergeladene Update FILE besitzt nicht das korrekte Datenformat (\texttt{.txt|.mrc|.xml}) und wird übersprungen.
+ 
+\texttt{WARNING: (Core) Not enough space to optimize Core (Needed: X MB, Available: Y MB)} \\
+Speicherplatz freigeben (z.B. durch Löschen von Updates), damit der Solr-Core optimiert werden kann.
+
+\texttt{WARNING: (Core) all files in target sshDataPath will be added!} \\ 
+Bei einem SSH-Update handelt es sich um einen unbekannten Core, wo der Name der Updates nicht spezifiziert wurden. Diese Nachricht soll ausdrücken, dass in dem angegebenen Ordner des entfernten Servers alle Dateien des Formates \texttt{.txt|.mrc|.xml|.tar|.tar.gz} heruntergeladen werden. Ist dies nicht beabsichtigt (da nur spezifisch benannte Dateien Updates/Deletions darstellen), muss \texttt{getUpdates.pl} erweitert werden.
+
+\texttt{WARNING: no query in REQUEST found .. skipping!"} \\
+In \texttt{solrQuery.ini} wurde in dem Eintrag REQUEST keine Anfrage gefunden. Entweder ist der Eintrag leer oder er wurde auskommentiert.
+
+
+\subsection{Errors}
+\texttt{ERROR: (Core) Either maxRecordsPerUpdatefile or maxDaysPerUpdatefile has to be 0!} \\
+In \texttt{config.ini} muss entweder \texttt{maxRecordsPerUpdatefile=0} oder \texttt{maxDaysPerUpdatefile=0} gesetzt sein.
+
+\texttt{ERROR: (Core) OAI-Update failed (HTTP-status: httpStatus)!} \\
+Das OAI Update ist (teilweise) fehlgeschlagen (beispielsweise aufgrund von Verbindungsproblemen zum Server), wird aber bei der nächsten Ausführung an der letzten Stelle fortgesetzt.
+
+\newpage
+\subsection{Sonstige Fehler}
+\begin{itemize}
+	\item \texttt{INFO: (Core) is up to date ..} obwohl neue Updates vorhanden sind \\
+		bei SSH-Update: möglicherweise wurde der falsche Pfad zum Update-Ordner angegeben oder der Prozess hat keinen Zugriff auf den Schlüsselbund zur public-Key Authentifizierung (in diesem Fall das Skript \texttt{startSshAgent.sh} rufen)
+		
+	\item beliebiger Skriptfehler in \texttt{*.sh} \\
+		damit Skripte fehlerfrei ausgeführt werden können, muss das aktuelle Verzeichnis dem Ordner mit den Skripten entsprechen (\texttt{bin})
+		
+	\item es kann Datei oder Verzeichnis nicht gefunden werden \\
+		alle Pfade müssen, sofern vom Benutzer angegeben (beispielsweise in \texttt{config.ini}), mit einem Backslash enden, da sonst nicht korrekt konkateniert werden kann; Dateien dagegen dürfen das nicht
+\end{itemize}
+
+
+
 
 % % % % % % % % % % % % % % Einschränkungen
 \newpage
@@ -792,9 +849,9 @@ Im Wesentlichen sind folgende Schritte durchzuführen:
 	\begin{itemize}
 		\item nur auf Ubuntu getestet
 		\item möglicherweise Pfadprobleme etc. unter Windows
-		\item Updates via SCP, HTTP ausführlich getestet
-		\item Updates via OAI nur im geringen Umfang getestet
-		\item Updates via OAI nur wenn Schnittstellen-Dateiformat XML
+		\item Updates via SCP, HTTP, OAI ausführlich getestet
+		%\item \sout{Updates via OAI nur im geringen Umfang getestet}
+		\item Updates via OAI nur im Schnittstellen-Dateiformat XML
 	\end{itemize}
 	
 	\item Abfragen
