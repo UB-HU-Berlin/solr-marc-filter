@@ -1,3 +1,13 @@
+v1.0.3
+- new CPAN module needed:
+	- Net::OpenSSH
+- CPAN modules not needed any more:
+	- Net::SCP
+	- Net::SSH
+- bugfixes
+- getUpdates: error handling for all update types if connection lost: HTTP, SSH, OAI
+- documentation updated
+
 v1.0.2
 - new CPAN module needed (Date::Simple)
 - many bugfixes (mainly in getUpdates.pl)
