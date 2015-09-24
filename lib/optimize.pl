@@ -72,5 +72,7 @@ sub optimize(@){
 		}
 	}
 }
-#&optimize("gbv"); 	#just for testing! comment this line
+if($ARGV[0]){
+	&optimize($ARGV[0]);
+}
 1;

@@ -22,6 +22,8 @@ my @verbuendeWithUpdates;
 
 my @verbuende = keys %$configs;
 foreach my $verbund(@verbuende){
+	
+	# skip global ini vars
 	next if $verbund eq '_';
 	
 	if($configs->{$verbund}->{'check'} eq '0'){
