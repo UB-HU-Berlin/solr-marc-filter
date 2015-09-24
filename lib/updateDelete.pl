@@ -124,7 +124,7 @@ sub updateDelete(@){
 				#	prevents the $indexFile to read data from stdin
 				
 				&logMessage("INFO", "($verbund) moving file $dirDel$updateOrDeletion to ./applied/");
-				system("mv $dirDel$updateOrDeletion $dirDel"."applied/");
+				rename $dirDel.$updateOrDeletion, $dirDel."applied/";
 				&logMessage("INFO", "($verbund) update $updateOrDeletion applied ..");
 			}
 			
@@ -135,7 +135,7 @@ sub updateDelete(@){
 				
 				system("$ini_pathIndexfile $dirUpd$updateOrDeletion $configProperties 2>>$ini_pathLogFileAlternative >/dev/null");
 				&logMessage("INFO", "($verbund) moving update file $dirUpd$updateOrDeletion to ./applied/");
-				system("mv $dirUpd$updateOrDeletion $dirUpd"."applied/");
+				rename $dirUpd.$updateOrDeletion, $dirUpd."applied/";
 				&logMessage("INFO", "($verbund) update $updateOrDeletion applied ..");
 			}
 			
