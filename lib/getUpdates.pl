@@ -469,7 +469,7 @@ sub getUpdates(@){
 					my $currID = $rec->header->identifier;
 					my $currDatestamp = $rec->header->datestamp;
 					
-					$firstDatestamp = $currDatestamp if($total % $maxRecordsPerUpdatefile == 1);
+					$firstDatestamp = $currDatestamp if($total == 1); #if($total % $maxRecordsPerUpdatefile == 1); #TODO: noch falsch ..
 					$firstDatestampDel = $currDatestamp if($total == 1);  # just set it once!
 					
 					$lastDatestamp = $currDatestamp; 
@@ -490,7 +490,8 @@ sub getUpdates(@){
 						#		this id is used to index the update-record when it is pushed to the Solr-Core
 						if($verbund eq "b3kat"){
 							my $recXML = $rec->{metadata}->{current}->firstChild->firstChild;
-							$recXML =~ s/<\/marc:record>$/<marc:datafield tag="999" ind1=" " ind2=" "><marc:subfield code="a">$currID<\/marc:subfield><\/marc:datafield><\/marc:record>/;
+							# find end of record and append field(s)
+							$recXML =~ s/<\/marc:record>$/<marc:datafield tag="990" ind1=" " ind2=" "><marc:subfield code="a">$currDatestamp<\/marc:subfield><\/marc:datafield>\n<marc:datafield tag="999" ind1=" " ind2=" "><marc:subfield code="a">$currID<\/marc:subfield><\/marc:datafield>\n<\/marc:record>\n/;
 							print $OUTupd $recXML;
 						}
 						else{
@@ -522,6 +523,8 @@ sub getUpdates(@){
 						my $oldFileName = $pathToUpdates . "updates_" . $from . "_" . $until . "_" . $n . ".xml";
 						my $newFileName = $pathToUpdates . "updates_" . $firstDatestamp . "_" . $lastDatestamp . ".xml";
 						&renameFile($oldFileName, $newFileName, $verbund);
+						
+						$firstDatestamp = $lastDatestamp;
 						$lastDatestampUpdatefile = $lastDatestamp;
 						
 						$n++;
@@ -544,6 +547,7 @@ sub getUpdates(@){
 						&renameFile($oldFileName, $newFileName, $verbund);
 						
 						$firstDatestampDel = $lastDatestamp;
+						$lastDatestampUpdatefile = $lastDatestamp;
 						
 						# make new file for the deletions
 						$d = scalar(@deletions);
@@ -601,7 +605,7 @@ sub getUpdates(@){
 				# if there are deletions - rename the deletion file
 				if(scalar(@deletions) > 0 and scalar(@deletions) % $maxRecordsPerUpdatefile != 0){
 					my $oldFileName = $pathToUpdates . "deletions_" . $from . "_" . $until . "_" . $d . ".txt";
-					my $newFileName = $pathToUpdates . "deletions_" . $firstDatestamp . "_" . $lastDatestamp . ".txt";
+					my $newFileName = $pathToUpdates . "deletions_" . $firstDatestampDel . "_" . $lastDatestamp . ".txt";
 					&renameFile($oldFileName, $newFileName, $verbund);
 				}
 				# .. or delete it
