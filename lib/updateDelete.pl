@@ -57,9 +57,13 @@ sub updateDelete(@){
 				push(@filesWithIDs, $file);
 			}
 			elsif ($file =~ m/(.*del.+)\.\w{3}$/){
-				system("mv \"$dirDel/$file\" \"$dirDel/$1.del\"");
-				&logMessage("DEBUG", "mv $file $1.del");
-				push(@filesWithIDs, "$1.del");
+				if(rename $dirDel."/".$file, $dirDel."/".$1.".del"){
+					&logMessage("DEBUG", "($verbund) renamed $file to $1.del");
+					push(@filesWithIDs, "$1.del");
+				}
+				else{
+					&logMessage("ERROR", "($verbund) Was not able renamed $file to $1.del");
+				}
 			}
 		}
 		@filesWithIDs = sort @filesWithIDs;
@@ -118,14 +122,18 @@ sub updateDelete(@){
 				&logMessage("INFO", "($verbund) Applying deletions from file $updateOrDeletion to solr index ..");
 				&logMessage("SYS", "($verbund) echo -e '\x04' | $ini_pathIndexfile $dirDel$updateOrDeletion $configProperties 2 > $ini_pathLogFileAlternative >/dev/null");
 				system("echo -e '\x04' | $ini_pathIndexfile $dirDel$updateOrDeletion $configProperties 2 > $ini_pathLogFileAlternative >/dev/null");
+				&logMessage("INFO", "($verbund) update $updateOrDeletion applied ..");
 				
 				# echo -e '\x04' | .. 
 				# 	this sends an end of transmission control char and
 				#	prevents the $indexFile to read data from stdin
 				
-				&logMessage("INFO", "($verbund) moving file $dirDel$updateOrDeletion to ./applied/");
-				rename $dirDel.$updateOrDeletion, $dirDel."applied/";
-				&logMessage("INFO", "($verbund) update $updateOrDeletion applied ..");
+				if(rename $dirDel.$updateOrDeletion, $dirDel."applied/".$updateOrDeletion){
+					&logMessage("INFO", "($verbund) deletion file $dirDel$updateOrDeletion moved to ./applied/");
+				}
+				else{
+					&logMessage("ERROR", "($verbund) Was not able move file $dirDel$updateOrDeletion to ./applied/ ");
+				}
 			}
 			
 			# apply updates and move the updates afterwords to applied
@@ -134,9 +142,14 @@ sub updateDelete(@){
 				&logMessage("SYS", "($verbund) $ini_pathIndexfile $dirUpd$updateOrDeletion $configProperties 2>>$ini_pathLogFileAlternative >/dev/null");
 				
 				system("$ini_pathIndexfile $dirUpd$updateOrDeletion $configProperties 2>>$ini_pathLogFileAlternative >/dev/null");
-				&logMessage("INFO", "($verbund) moving update file $dirUpd$updateOrDeletion to ./applied/");
-				rename $dirUpd.$updateOrDeletion, $dirUpd."applied/";
 				&logMessage("INFO", "($verbund) update $updateOrDeletion applied ..");
+				
+				if(rename $dirUpd.$updateOrDeletion, $dirUpd."applied/".$updateOrDeletion){
+					&logMessage("INFO", "($verbund) update file $dirUpd$updateOrDeletion moved to ./applied/");
+				}
+				else{
+					&logMessage("ERROR", "($verbund) Was not able move file $dirUpd$updateOrDeletion to ./applied/ ");
+				}
 			}
 			
 			else{
