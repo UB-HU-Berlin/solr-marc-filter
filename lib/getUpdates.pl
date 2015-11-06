@@ -458,7 +458,7 @@ sub getUpdates(@){
 				open(my $OUTdel, "> $pathToUpdates"."deletions_$from"."_$until" . "_" . $d .".txt") or die("($now) ERROR: ($verbund) Could not open $pathToUpdates"."deletions_$from"."_$until.txt: $!\n");
 				
 				# prepare the xml file for the updates
-				print $OUTupd '<?xml version="1.0" encoding="ISO-8859-1" ?><marc:collection xmlns:marc="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">'."\n";
+				print $OUTupd '<?xml version="1.0" encoding="UTF-8" ?><marc:collection xmlns:marc="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">'."\n";
 				
 				my ($firstDatestamp, $firstDatestampDel, $lastDatestamp, $lastDatestampUpdatefile);
 				
@@ -532,7 +532,7 @@ sub getUpdates(@){
 						my $filename = "$pathToUpdates"."updates_$from"."_$until"."_$n.$updateFormat";
 						open($OUTupd, "> $filename") or die("ERROR: Could not open $filename file of $verbund: $!");
 						binmode $OUTupd, ":utf8";
-						print $OUTupd '<?xml version="1.0" encoding="ISO-8859-1" ?><marc:collection xmlns:marc="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">'."\n";
+						print $OUTupd '<?xml version="1.0" encoding="UTF-8" ?><marc:collection xmlns:marc="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">'."\n";
 						print $inOut "$currDatestamp\n";
 						&logMessage("INFO", "($verbund) got updates until $currDatestamp.");
 					}
