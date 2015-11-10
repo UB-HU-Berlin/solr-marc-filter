@@ -57,13 +57,9 @@ sub updateDelete(@){
 				push(@filesWithIDs, $file);
 			}
 			elsif ($file =~ m/(.*del.+)\.\w{3}$/){
-				if(rename $dirDel."/".$file, $dirDel."/".$1.".del"){
-					&logMessage("DEBUG", "($verbund) renamed $file to $1.del");
-					push(@filesWithIDs, "$1.del");
-				}
-				else{
-					&logMessage("ERROR", "($verbund) Was not able renamed $file to $1.del");
-				}
+				my $oldFileName = $dirDel."/".$file;
+				my $newFileName = $dirDel."/".$1.".del";
+				&renameFile($oldFileName, $newFileName, $verbund);
 			}
 		}
 		@filesWithIDs = sort @filesWithIDs;
@@ -128,12 +124,9 @@ sub updateDelete(@){
 				# 	this sends an end of transmission control char and
 				#	prevents the $indexFile to read data from stdin
 				
-				if(rename $dirDel.$updateOrDeletion, $dirDel."applied/".$updateOrDeletion){
-					&logMessage("INFO", "($verbund) deletion file $dirDel$updateOrDeletion moved to ./applied/");
-				}
-				else{
-					&logMessage("ERROR", "($verbund) Was not able move file $dirDel$updateOrDeletion to ./applied/ ");
-				}
+				my $oldFileName = $dirDel.$updateOrDeletion;
+				my $newFileName = $dirDel."applied/".$updateOrDeletion;
+				&renameFile($oldFileName, $newFileName, $verbund);
 			}
 			
 			# apply updates and move the updates afterwords to applied
@@ -144,12 +137,9 @@ sub updateDelete(@){
 				system("$ini_pathIndexfile $dirUpd$updateOrDeletion $configProperties 2>>$ini_pathLogFileAlternative >/dev/null");
 				&logMessage("INFO", "($verbund) update $updateOrDeletion applied ..");
 				
-				if(rename $dirUpd.$updateOrDeletion, $dirUpd."applied/".$updateOrDeletion){
-					&logMessage("INFO", "($verbund) update file $dirUpd$updateOrDeletion moved to ./applied/");
-				}
-				else{
-					&logMessage("ERROR", "($verbund) Was not able move file $dirUpd$updateOrDeletion to ./applied/ ");
-				}
+				my $oldFileName = $dirDel.$updateOrDeletion;
+				my $newFileName = $dirDel."applied/".$updateOrDeletion;
+				&renameFile($oldFileName, $newFileName, $verbund);
 			}
 			
 			else{

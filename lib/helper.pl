@@ -160,4 +160,19 @@ sub compareTime($$){
 	
 	return DateTime->compare($dateTime1, $dateTime2);
 }
+
+sub renameFile($$){
+	my $oldFileName = $_[0];
+	my $newFileName = $_[1];
+	my $verbund = $_[2];
+
+	if(rename $oldFileName, $newFileName){
+		&logMessage("INFO", "($verbund) moved $oldFileName to $newFileName");
+	}
+	else{
+		&logMessage("ERROR", "($verbund) unable to move file $oldFileName to $newFileName");
+	}
+}
+
+
 1;

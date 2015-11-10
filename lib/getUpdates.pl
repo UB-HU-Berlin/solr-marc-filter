@@ -661,14 +661,6 @@ sub getUpdates(@){
 	return @verbuendeWithNewUpdates;
 }
 
-sub renameFile($$){
-	my $oldFileName = $_[0];
-	my $newFileName = $_[1];
-	my $verbund = $_[2];
-	&logMessage("SYS", "($verbund) rename $oldFileName -> $newFileName");
-	rename $oldFileName, $newFileName;
-}
-
 if($ARGV[0]){
 	&getUpdates($ARGV[0]);
 }
