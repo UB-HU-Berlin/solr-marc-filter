@@ -484,19 +484,52 @@ sub getUpdates(@){
 					else{
 						# count update and print updates metadata into file
 						$u++;
+						my $recXML = $rec->{metadata}->{current}->firstChild->firstChild;
 						
-						# note: b3kat (http://www.bib-bvb.de/web/b3kat/open-data) does not print the oai-identifier 
-						#		into the xml records - so it is needed to print the id into field 999 manually because
-						#		this id is used to index the update-record when it is pushed to the Solr-Core
-						if($verbund eq "b3kat"){
-							my $recXML = $rec->{metadata}->{current}->firstChild->firstChild;
-							# find end of record and append field(s)
-							$recXML =~ s/<\/marc:record>$/<marc:datafield tag="990" ind1=" " ind2=" "><marc:subfield code="a">$currDatestamp<\/marc:subfield><\/marc:datafield>\n<marc:datafield tag="999" ind1=" " ind2=" "><marc:subfield code="a">$currID<\/marc:subfield><\/marc:datafield>\n<\/marc:record>\n/;
-							print $OUTupd $recXML;
+						# check if the record is correct
+						my $currRecordIsCorrect = 1;
+						my @neededFields = ('001');		# id field 001 is always needed
+						my @controlFields = ('001','003','005', '006', '007', '008');
+						my %neededFields = map { $_ => 1 } @neededFields;
+						
+						# check if first fields exists as controlFields
+						foreach my $controlField(@controlFields){
+							# field exists
+							if($recXML =~ /tag="$controlField"/){
+								# field not exists as control field
+								if(not $recXML =~ /controlfield tag="$controlField"/){	# no g-flag here!
+									$currRecordIsCorrect = 0;
+									&logMessage("DEBUG", "($verbund) record $currID has wrong field ($controlField is not a controlField)");
+								}
+							}
+						}
+						
+						# check if neededFields exists
+						foreach my $neededField(@neededFields){
+							if($recXML =~ /tag="$neededField"/){	# no g-flag here!
+								delete($neededFields{$neededField});
+							}
+						}
+						if(scalar(keys %neededFields) > 0){
+							$currRecordIsCorrect = 0;
+							&logMessage("DEBUG", "($verbund) missing field(s) in record $currID");
+						}
+						
+						if($currRecordIsCorrect){
+							# note: b3kat (http://www.bib-bvb.de/web/b3kat/open-data) does not print the oai-identifier 
+							#		into the xml records - so it is needed to print the id into field 999 manually because
+							#		this id is used to index the update-record when it is pushed to the Solr-Core
+							if($verbund eq "b3kat"){
+								# find end of record and append field(s)
+								$recXML =~ s/<\/marc:record>$/<marc:datafield tag="990" ind1=" " ind2=" "><marc:subfield code="a">$currDatestamp<\/marc:subfield><\/marc:datafield>\n<marc:datafield tag="999" ind1=" " ind2=" "><marc:subfield code="a">$currID<\/marc:subfield><\/marc:datafield>\n<\/marc:record>\n/;
+								print $OUTupd $recXML;
+							}
+							else{
+								print $OUTupd $recXML;
+							}
 						}
 						else{
-							my $recXML = $rec->{metadata}->{current}->firstChild->firstChild;
-							print $OUTupd $recXML;
+							&logMessage("ERROR", "($verbund) found incorrect Record in OAI (ID): $currID");
 						}
 					}
 					
