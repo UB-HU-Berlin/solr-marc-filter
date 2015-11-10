@@ -292,7 +292,7 @@ Diese Skripte befinden sich im Verzeichnis \texttt{./bin} und sind zu meist Alia
 		\item Oracle (Sun) Java
 	\end{itemize}
 	\item Apache Solr 4.8.1 \footnote{\url{https://archive.apache.org/dist/lucene/solr/4.8.1/solr-4.8.1.tgz}}
-	\item SolrMarc SVN Revision r17461\footnote{\url{https://code.google.com/p/solrmarc/source/checkout}}
+	\item SolrMarc SVN Revision r1803\footnote{\url{https://code.google.com/p/solrmarc/source/checkout}}
 	\item Perl 5.14.2 mit folgenden Modulen (nachinstallierbar via CPAN\footnote{\url{http://www.cpan.org/}}), (entsprechend abhängige Untermodule müssen selbstständig nachinstalliert werden)
 	\begin{itemize}
 	%TODO: Kommandos sollten als Superuser ausgeführt werden..
@@ -559,27 +559,27 @@ Updates sind Aktualisierungsdateien, die in regelmäßigen Abständen von den en
 \begin{itemize}
 	\item Lösch-Updates: \\
 		Die Dateien enthalten in der Regel immer nur die Identifikatoren (IDs) der Datensätze, die gelöscht werden sollen, wobei pro Zeile genau eine ID gelistet wird. Bei OAI Schnittstellen können Lösch-Updates und Daten-Updates in derselben Ergebnismenge liegen. \\
-		Namenskonvention (bei SCP und HTTP): \\
-		\texttt{file.del} (z.B. \texttt{gbv-catalog-delete-2015-02-01.del})
+		\textbf{Namenskonvention} (bei SCP und HTTP): \texttt{filename.(del|txt)(.(tar|tar.gz))?} \\ 
+		z.B. \texttt{gbv-catalog-delete-2015-02-01.del, \texttt{od\_del\_bsz-tit\_141215\_01.txt.tar.gz}}
 		%TODO: namenskonvention überarbeiten!
 	\item Daten-Updates: \\
 		Die Dateien enthalten die eigentlichen neuen oder überarbeiteten Meta-Informationen. \\
-		Namenskonvention (bei SCP und HTTP):\\
-		\texttt{file.xml} oder \texttt{file.mrc} (z.B. \texttt{gbv-catalog-update-2015-02-01\_1of4.mrc})
+		\textbf{Namenskonvention} (bei SCP und HTTP): \texttt{filename.(xml|mrc)(.(tar|tar.gz))?} \\
+		z.B. \texttt{gbv-catalog-update-2015-02-01\_1of4.mrc}, \texttt{od\_bsz-tit\_150318\_01.xml.tar.gz}
 \end{itemize}
 
 %-subsubsubsection-
 \paragraph{Download-Formate}
-Die bezogenen Updates werden im .tar.gz Format erwartet. Sollte andere Formate bzw. Komprimierungen vorliegen, muss entsprechend das Skript \texttt{./lib/getUpdates.pl} verändert werden. Die dann entpackten Updates aus den jeweiligen komprimierten Dateien, müssen der obrigen Namenskonvention entsprechen, da SolrMarc sonst nicht korrekt indizieren kann. \\
+Die bezogenen Updates können auch komprimiert (.tar.gz) vorliegen und werden dann automatisch entpackt. Die entpackten Updates aus den jeweiligen komprimierten Dateien, müssen der obrigen Namenskonvention entsprechen, da SolrMarc sonst nicht korrekt indizieren kann. \\
 Die Updates der jeweiligen Cores werden abhängig von ihrem jeweiligen Quellen unterschiedlich geladen. Aktuell werden hier drei verschiedene Methoden angeboten: 
 
 \begin{itemize}
 	\item OAI \\
-		Open Archives Initiative bietet ein Protokoll zum Harvesten von Metadaten. Das Protokoll basiert auf XML und REST und im wesentlichen wird bei dieser Art der Update-Konfiguration eine REST-Anfrage generiert und abgeschickt. Die gelieferten Datensätze, die einem bestimmten Zeitraum zuzuordnen sind werden dann in XML-Format gespeichert.
+		Open Archives Initiative bietet ein Protokoll zum Harvesten von Metadaten. Das Protokoll basiert auf XML und REST und im wesentlichen wird bei dieser Art der Update-Konfiguration eine REST-Anfrage generiert und abgeschickt. Die gelieferten Datensätze, die einem bestimmten Zeitraum zuzuordnen sind, werden im XML-Format gespeichert.
 	\item SCP \\ 
 	%TODO: Cronjob beschreiben
 	%TODO: 
-		Ist eine simple Konfigurations-Variante, die es automatisiert ermöglicht per Secure Copy die bereitgestellten Updates vom Server auf den lokalen Rechner zu kopieren. Damit dieses Verfahren automatisch funktioniert (z.B. per Cronjob), muss die Verbindung zum entsprechenden Server per Public-Private-Key Authentifizierung vollzogen werden. Dazu muss der entsprechende Private-Key mit Hilfe des Skriptes \hyperref[sec:para:startSshAgent]{\texttt{startSshAgent.sh}} entschlüsselt werden.
+		Ist eine simple Konfigurations-Variante, die es automatisiert ermöglicht per Secure Copy die bereitgestellten Updates vom Server auf den lokalen Rechner zu kopieren. Damit dieses Verfahren automatisch funktioniert (z.B. per Cronjob), muss die Verbindung zum entsprechenden Server per Public-Private-Key Authentifizierung vollzogen werden. Dazu wird das Skript \hyperref[sec:para:startSshAgent]{\texttt{startSshAgent.sh}} verwendet.
 	\item HTTP \\
 		Ist eine simple Konfigurations-Variante, die es automatisiert ermöglicht, angebotene öffentliche Updates, die sich auf dem jeweiligen Verbundsserver unter einer bestimmten URL befinden, herunterzuladen.
 \end{itemize}
@@ -716,7 +716,7 @@ Dieses Datei enthält die jeweiligen Filter-Anfragen zu den spezifischen Cores. 
 			query=(BCL_category:"17.28" OR SDNB_category:"33") AND 	keywords:"landeskunde"
 		\end{alltt}
 \end{itemize}
-Alle Ergebnisse werden standardmäßig unter \texttt{results} als \texttt{filterName\_DatumTUhrzeitZ\_query.mrc} mit zusätzlichen Abfrageinformationen in einer gleichnamigen Textdatei abgelegt. 
+Alle Ergebnisse werden standardmäßig unter \texttt{results/filterName\_DatumTUhrzeitZ\_query.mrc} mit zusätzlichen Abfrageinformationen in einer gleichnamigen Textdatei abgelegt. 
 
 % % % % % % % % % % % % % % Einschränkungen
 \newpage
@@ -780,49 +780,48 @@ Im Wesentlichen sind folgende Schritte durchzuführen:
 	
 \end{enumerate}
 
-%\subsection{title}
-
 %TODO.. ausführlicher!
 % % % % % % % % % % % % % % Troubleshooting
 \newpage
 \section{Troubleshooting}
 \subsection{Warnings}
 \texttt{WARNING: (Core) will not be checked for updates due to check=0!}\\
-Updates werden nur durchgeführt, wenn in \texttt{config.ini} das Flag \texttt{check=1} gesetzt ist. Falls dies nicht der Fall ist, kann es sein, dass gerade die Initialdaten für den Core in das Solr-System eingespielt werden.
+Updates werden nur durchgeführt, wenn in \texttt{config.ini} das Flag \texttt{check=1} gesetzt ist. Falls dies nicht der Fall ist, kann es sein, dass gerade die Initialdaten für den Core in das Solr-System eingespielt werden. 
 
 \texttt{WARNING: (Core) update already in progress and locked by config.ini}\\
-Updates werden nur durchgeführt, wenn gerade keine weiteren Updates für den Core heruntergeladen oder eingespielt werden (\texttt{updateIsRunning=0} in \texttt{config.ini}). Falls keine Updates durchgeführt werden und diese Nachricht trotzdem erscheint, muss der Wert manuell zurückgesetzt werden.
+Updates werden nur durchgeführt, wenn gerade keine weiteren Updates für den Core heruntergeladen oder eingespielt werden (\texttt{updateIsRunning=0} in \texttt{config.ini}). Falls keine Updates durchgeführt werden und diese Nachricht trotzdem erscheint, muss der Wert manuell zurückgesetzt werden. Es sollte hier auch geprüft werden, ob veraltete Indizierungsprozesse laufen und diese ggf. geschlossen werden (\texttt{\$ ps aux | grep indexfile}).
 
 \texttt{WARNING: (Core) ignore File (FILE) for update!}\\
-Das heruntergeladene Update FILE besitzt nicht das korrekte Datenformat (\texttt{.txt|.mrc|.xml}) und wird übersprungen.
+Das heruntergeladene Update \texttt{FILE} besitzt nicht das korrekte Datenformat (\texttt{.txt|.mrc|.xml}) und wird übersprungen.
  
 \texttt{WARNING: (Core) Not enough space to optimize Core (Needed: X MB, Available: Y MB)} \\
-Speicherplatz freigeben (z.B. durch Löschen von Updates), damit der Solr-Core optimiert werden kann.
+Speicherplatz freigeben (z.B. durch Löschen von Updates), damit die speicheraufwändige Solr-Core-Optimierung durchgeführt werden kann.
 
-\texttt{WARNING: (Core) all files in target sshDataPath will be added!} \\ 
-Bei einem SSH-Update handelt es sich um einen unbekannten Core, wo der Name der Updates nicht spezifiziert wurden. Diese Nachricht soll ausdrücken, dass in dem angegebenen Ordner des entfernten Servers alle Dateien des Formates \texttt{.txt|.mrc|.xml|.tar|.tar.gz} heruntergeladen werden. Ist dies nicht beabsichtigt (da nur spezifisch benannte Dateien Updates/Deletions darstellen), muss \texttt{getUpdates.pl} erweitert werden.
+\texttt{WARNING: (Core) all .(del|txt|xml|mrc) files in URL will be added!} \\ 
+Bei einem HTTP-Update handelt es sich um einen Core, dessen Dateinamenskonventionen nicht spezifiziert sind. Diese Nachricht soll ausdrücken, dass alle Dateien (.tar.gz-komprimiert oder nicht) die im HTML-Code der \texttt{URL} zu finden sind, heruntergeladen werden. Falls nur ganz spezielle Dateinamen (z.B. der Form update-2015-10-10.mrc aber z.B. nicht updates2014-all.mrc) heruntergeladen und eingepflegt werden sollen, muss dies in \texttt{getUpdates.pl} für den jeweiligen Core erweitert werden.
 
 \texttt{WARNING: no query in REQUEST found .. skipping!"} \\
 In \texttt{solrQuery.ini} wurde in dem Eintrag REQUEST keine Anfrage gefunden. Entweder ist der Eintrag leer oder er wurde auskommentiert.
 
 
 \subsection{Errors}
+Die meisten Error Ausgaben sind selbsterklärend. Im Folgenden stehen daher nur Auszüge der möglichen Fehler. \\
+
 \texttt{ERROR: (Core) Either maxRecordsPerUpdatefile or maxDaysPerUpdatefile has to be 0!} \\
 In \texttt{config.ini} muss entweder \texttt{maxRecordsPerUpdatefile=0} oder \texttt{maxDaysPerUpdatefile=0} gesetzt sein.
 
 \texttt{ERROR: (Core) OAI-Update failed (HTTP-status: httpStatus)!} \\
 Das OAI Update ist (teilweise) fehlgeschlagen (beispielsweise aufgrund von Verbindungsproblemen zum Server), wird aber bei der nächsten Ausführung an der letzten Stelle fortgesetzt.
 
-\newpage
 \subsection{Sonstige Fehler}
 \begin{itemize}
 	\item \texttt{INFO: (Core) is up to date ..} obwohl neue Updates vorhanden sind \\
 		bei SSH-Update: möglicherweise wurde der falsche Pfad zum Update-Ordner angegeben oder der Prozess hat keinen Zugriff auf den Schlüsselbund zur public-Key Authentifizierung (in diesem Fall das Skript \texttt{startSshAgent.sh} rufen)
 		
 	\item beliebiger Skriptfehler in \texttt{*.sh} \\
-		damit Skripte fehlerfrei ausgeführt werden können, muss das aktuelle Verzeichnis dem Ordner mit den Skripten entsprechen (\texttt{bin})
+		damit Skripte korrekt ausgeführt werden, muss das aktuelle Verzeichnis dem Ordner mit den Skripten entsprechen (\texttt{bin})
 		
-	\item es kann Datei oder Verzeichnis nicht gefunden werden \\
+	\item es kann eine Datei oder Verzeichnis nicht gefunden werden \\
 		alle Pfade müssen, sofern vom Benutzer angegeben (beispielsweise in \texttt{config.ini}), mit einem Backslash enden, da sonst nicht korrekt konkateniert werden kann; Dateien dagegen dürfen das nicht
 \end{itemize}
 
@@ -850,17 +849,17 @@ Das OAI Update ist (teilweise) fehlgeschlagen (beispielsweise aufgrund von Verbi
 		\item nur auf Ubuntu getestet
 		\item möglicherweise Pfadprobleme etc. unter Windows
 		\item Updates via SCP, HTTP, OAI ausführlich getestet
+		\item Updates für jede Schnittstelle mit Fehlerbehandlung
 		%\item \sout{Updates via OAI nur im geringen Umfang getestet}
 		\item Updates via OAI nur im Schnittstellen-Dateiformat XML
 	\end{itemize}
 	
 	\item Abfragen
 	\begin{itemize}
-		\item nur auf Basis des Indizierungsschemas %TODO: was damit sematisch gemeint
+		\item nur auf Basis des Indizierungsschemas
 		\item keine nachträgliche Änderung des Index-Schemas ohne vollständige Neuindizierung (Hinzufügen von sinnvoller Auswahl an dynamischen Feldern notwendig)
 		\item Beschränkungen durch Inhalte der Marc-Daten (z.B. kann nicht allgemein nach Erscheinungsjahr gesucht werden, wenn kein einheitliches Format umgesetzt wird)
-		\item keine Anfragen über alle Cores (z.B. via shards, da dies zu lange Response-Zeiten verursachen)
-		
+		\item keine Anfragen über alle Cores (z.B. via shards, da dies zu lange Response-Zeiten verursachen)		
 	\end{itemize}
 \end{itemize}
 
@@ -881,7 +880,5 @@ Das OAI Update ist (teilweise) fehlgeschlagen (beispielsweise aufgrund von Verbi
 %\bibliographystyle{alpha}
 %\bibliographystyle{alphadin}
 \bibliographystyle{apacite}
-
-
 
 \end{document}
