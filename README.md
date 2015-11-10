@@ -12,7 +12,7 @@ Dies ist ein Projekt der Universitätsbibliothek der Humboldt-Universität zu Be
 Diese Projekt benötigt bzw. ist abhängig von folgenden Komponenten (getestet)
 
 - [Apache Solr](http://lucene.apache.org/solr/) v4.8.1 
-- [SolrMarc](https://code.google.com/p/solrmarc/source/checkout) SVN-Revision r17461
+- [SolrMarc](https://code.google.com/p/solrmarc/source/checkout) SVN-Revision r1803
 - Perl v5.8.9 mit folgenden Modulen
     - Apache::Solr
     - Archive::Extract
@@ -43,7 +43,7 @@ Diese Projekt benötigt bzw. ist abhängig von folgenden Komponenten (getestet)
     - enthält alle Cores (Verbünde), die in der Solr Instanz angezeigt, verwaltet und geupdatet werden
 - __./docu/__
     - enthält die Dokumentation des Projekts als pdf mit detaillierten Erklärungen und den entsprechenden LaTex Resourcen
-- __/etc/__ 
+- __./etc/__ 
     - enthält wichtige Dateien wie die Konfigurationen der jeweiligen Cores und eine Datei mit der die jeweiligen Filter geschrieben werden können
 - __./lib/__
     - enthält die jeweiligen Perl Skripte, die über die Bash-Skripte aufgerufen werden

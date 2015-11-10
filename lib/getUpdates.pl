@@ -35,6 +35,11 @@ sub getUpdates(@){
 		$pathToUpdates = "$ini_pathToFachkatalogGlobal$pathToUpdates" if($pathToUpdates =~ $reIsGlobalPath);
 		
 		my $updateFormat = $configs->{$verbund}->{'updateFormat'};
+		if(not $updateFormat =~ /^(xml|mrc)/){
+			&logMessage("ERROR", "($verbund) updateFormat=$updateFormat not allowed! Skip $verbund..");
+			next;
+		}
+		
 		my @lastUpdates;
 		my $inOut;
 		
@@ -102,12 +107,12 @@ sub getUpdates(@){
 						}
 					}
 					else{
-						while($contentUpd =~ /^.+\.(txt|mrc|xml|tar|tar\.gz)$/g){
-							&logMessage("WARNING", "($verbund) all files in target updateURL will be added!");
+						while($contentUpd =~ /^.+\.($updateFormat)(\.(tar|tar\.gz))?$/g){
+							&logMessage("WARNING", "($verbund) all .$updateFormat files in $updateURL will be added!");
 							push(@allUpdateFiles, $1);
 						}
-						while($contentDel =~ /^.+\.(txt|mrc|xml|tar|tar\.gz)$/g){
-							&logMessage("WARNING", "($verbund) all files in target updateURLDeletions will be added!");
+						while($contentDel =~ /^.+\.(txt|del)(\.(tar|tar\.gz))?$/g){
+							&logMessage("WARNING", "($verbund) all .del or .txt files in $deletionURL will be added!");
 							push(@allUpdateFiles, $1);
 						}
 					}
@@ -141,12 +146,10 @@ sub getUpdates(@){
 						my $url;
 						
 						if ($fileName =~ /\.$updateFormat(\.tar\.gz)?$/){
-							#getstore($updateURL.$fileName, $pathToUpdates.$fileName) or &logMessage("ERROR", "($verbund) Could not download $fileName from $updateURL");
 							$url = $updateURL.$fileName;
 						}
 						
-						if ($fileName =~ /\.txt(\.tar\.gz)?$/){
-							#getstore($deletionURL.$fileName, $pathToUpdates.$fileName) or &logMessage("ERROR", "($verbund) Could not download $fileName from $deletionURL");
+						if ($fileName =~ /\.(txt|del)(\.tar\.gz)?$/){
 							$url = $deletionURL.$fileName;
 						}
 						
@@ -154,7 +157,7 @@ sub getUpdates(@){
 						
 						$curl->setopt(CURLOPT_URL, $url);
 						$curl->setopt(CURLOPT_WRITEDATA, $outFile);
-						#$curl->setopt(CURLOPT_TIMEOUT, 20);		# just for testing - std-timeout is to long
+						#$curl->setopt(CURLOPT_TIMEOUT, 20);		# just for testing - std-timeout is too long
 						$curl->perform;
 						
 						my $err = $curl->errbuf;
@@ -274,17 +277,15 @@ sub getUpdates(@){
 					}
 					# in all other cases
 					else{
-						&logMessage("WARNING", "($verbund) invalid value for updateFormat in config.ini") if(not $updateFormat =~ /(mrc|xml)/);
-						
-						# Updates must have form File.txt(.tar|.tar.gz) or File.mrc(.tar|.tar.gz) or File.xml(.tar|.tar.gz)
-						if( $updateFile =~ /^.+\.(txt|$updateFormat)(\.(tar|tar\.gz))?$/){
+						# Updates must have form File.(del|txt|xml|mrc)(.tar|.tar.gz)?
+						if( $updateFile =~ /^.+\.(del|txt|$updateFormat)(\.(tar|tar\.gz))?$/){
 							push(@allUpdateFiles, $updateFile);
 						}
 					}
 				}
 				@allUpdateFiles = sort(@allUpdateFiles);
 				
-				# just download the new updates (and not also the lastUpdates)
+				# just download the new updates (and not the lastUpdates)
 				my %lastUp = map {$_ => 1} @lastUpdates;
 				my @updates = grep {not $lastUp{$_}} @allUpdateFiles;
 				

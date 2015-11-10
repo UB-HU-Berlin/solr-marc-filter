@@ -18,7 +18,6 @@ my $log_warning	= 1;
 my $log_error 	= 1;
 
 ## regex negative lookahead - if there is not a / at beginning
-#our $re = "^(?!\/).+"; 
 our $reIsGlobalPath = "^(?!\/).+";
 
 ## read ini values once and make them global
@@ -161,7 +160,7 @@ sub compareTime($$){
 	return DateTime->compare($dateTime1, $dateTime2);
 }
 
-sub renameFile($$){
+sub renameFile($$$){
 	my $oldFileName = $_[0];
 	my $newFileName = $_[1];
 	my $verbund = $_[2];
