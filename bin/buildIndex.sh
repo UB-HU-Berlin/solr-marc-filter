@@ -9,6 +9,9 @@ echo $pathToData
 j=0
 echo "[$j] ABORT"
 array[$j]="ABORT";
+j=1
+echo "[$j] ALL"
+array[$j]="ALL";
 
 # show all existing cores and let the user select one
 for i in $( ls -d */ );
@@ -17,8 +20,6 @@ do
 	echo "[$j]" ${i%%/};
 	array[$j]=${i%%/};
 done
-#echo $j
-#echo ${array[@]}
 
 read number
 reNumber="^[0-$j]"
@@ -35,17 +36,35 @@ then
 fi
 
 core=${array[$number]}
+indexAll=0
 
-echo "Are you shure to index the Core $core?. Check index.properties file to make shure everything you want will be indicated."
+if [[ $core -eq "ALL" ]]
+then
+	echo "Are you shure to index the ALL Cores?. Check every index.properties file to make shure everything you want will be indicated."
+	indexAll=1
+else
+	echo "Are you shure to index the Core $core?. Check index.properties file to make shure everything you want will be indicated."
+fi
+#subarray array[1:]
+#echo ${array[@]:1:${#array[@]}}
+
 echo "Type YES to continue .."
 read continue
 
-#TODO index all ..
 if [ "$continue" == "YES" ]
 then
 	echo "Will index Core(s) now!"
+	if [ $indexAll == 1 ]
+	then
+		for coreName in ${array[@]:2:${#array[@]}} ;
+		do
+			core+=$coreName
+			core+=" "
+		done
+		core=${core:0:-1}
+	fi
 	perl ../lib/buildInitialIndexThreading.pl $core
-	echo "Done!\n"
+	echo ../lib/buildInitialIndexThreading.pl $core
 else
 	echo "Aborted!"
 fi
