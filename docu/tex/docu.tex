@@ -506,7 +506,7 @@ Folgende Parameter sind in der Konfigurationsdatei enthalten:
 	\texttt{oaiMaxDaysPerUpdatefile} & 0 & Alternativ zum vorherigen Parameter kann auch angegeben werden, dass die angefallenen Updates tageweise zusammengefasst werden. Dann muss aber der Parameter \texttt{oaiMaxRecordsPerUpdatefile=0}.\\ \hline	
 	
 	%TODO: oaiOldestUpdate
-	\texttt{oaiOldestUpdate} & 2015-05-01T00:00:00Z & Stellt das Datum des letzten Gesamtabzugs und damit ältestes Update Datum dar. D.h. sollten die veröffentlichten Initialdaten des jeweiligen Verbundes vom 1. Mai sein, gibt es nur Updates nach diesem Datum. \\ \hline	
+	\texttt{oaiOldestUpdate} & 2015-11-01T00:00:00Z & Stellt das Datum des letzten Gesamtabzugs und damit ältestes Update Datum dar. D.h. sollten die veröffentlichten Initialdaten des jeweiligen Verbundes vom 1. November sein, gibt es nur Updates nach diesem Datum. \\ \hline	
 	
 
 	\multicolumn{3}{l}{(SCP-spezifisch:)} \\ \hline
@@ -812,6 +812,9 @@ In \texttt{config.ini} muss entweder \texttt{maxRecordsPerUpdatefile=0} oder \te
 
 \texttt{ERROR: (Core) OAI-Update failed (HTTP-status: httpStatus)!} \\
 Das OAI Update ist (teilweise) fehlgeschlagen (beispielsweise aufgrund von Verbindungsproblemen zum Server), wird aber bei der nächsten Ausführung an der letzten Stelle fortgesetzt.
+
+\texttt{Error parsing time at /usr/lib/perl/5.18/Time/Piece.pm line 469.} \\
+Wahrscheinlich wurde an irgend einer Stelle das korrekte Datumsformat nicht eingehalten. Die korrekte Form ist \texttt{YYYY-MM-DDTHH:MM:SSZ}, z.B. \texttt{2015-12-01T14:00:10Z}.
 
 \subsection{Sonstige Fehler}
 \begin{itemize}

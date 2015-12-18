@@ -1,24 +1,24 @@
 ; contains the queries
 
-; [exampleFiler1]
+[exampleFiler1]
 ; returns all records with name Architektur
-	; verbund=core1
-	; query=keywords:architektur
+	verbund=core1
+	query=keywords:architektur
 
-; [exampleFiler2]
+[exampleFiler2]
 ; returns e.g. Geographie and Geologie 
-	; verbund=core1
-	; query=keywords:geo*ie
+	verbund=core1
+	query=keywords:geo*ie
 
 ; Range based querys ..
-; [exampleFiler3]
+[exampleFiler3]
 ; returns all records between classification AA1000 and FF9000 
-	; verbund=core1
-	; query=category_RVK:["aa 1000" TO "ff 9000"]
-; [exampleFiler4]
-	; verbund=core1
-	; query=BCL_category:[38.00 TO 39.00]
-; [exampleFiler5]
-	; verbund=core1
-	; query=RVK_category:[ca1000 TO zg9000]
+	verbund=core1
+	query=category_RVK:["aa 1000" TO "ff 9000"]
+[exampleFiler4]
+	verbund=core1
+	query=BCL_category:[38.00 TO 39.00]
+[exampleFiler5]
+	verbund=core1
+	query=RVK_category:[ca1000 TO zg9000]
 
