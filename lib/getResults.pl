@@ -24,6 +24,8 @@ my $configs = Config::INI::Reader->read_file("$FindBin::Bin/../etc/config.ini");
 my $queries = Config::INI::Reader->read_file($ini_pathQuery);
 my $offset = $ARGV[0];
 $offset = 0 unless $offset;
+my $saveResults = $ARGV[1];
+$saveResults = "y" unless $saveResults;
 
 my @queries = keys %$queries;
 @queries = sort(@queries);
@@ -46,10 +48,6 @@ foreach my $request(@queries){
 		$verbund =~ s/\"//g;
 		
 		my $url = $ini_urlSolrDefault . "$verbund/select?";
-		
-		print $verbund . "\n";
-		print $ini_urlSolrDefault . "\n";
-		
 		my $base;
 		$url.= "q=$query";
 		#$url.= "&wt=json";			#TODO: use json instead of xml because of overhead
@@ -75,8 +73,11 @@ foreach my $request(@queries){
 		&logMessage("DEBUG", $url."&rows=$rows&start=$start");
 		
 		if($content->is_success){
-			&logMessage("ERROR", "Query $request was possible invalid") if not $content;
-			next if not $content;
+			
+			if(not $content){
+				&logMessage("ERROR", "Query $request was possible invalid");
+				next;
+			}
 			
 			#my $jsonRef = parse_json ($content->{_content});
 			my $xmlRef = XMLin($content->{_content});
@@ -84,8 +85,11 @@ foreach my $request(@queries){
 			my $resultNumber = $xmlRef->{'result'}->{'numFound'};
 			$resultNumber = 0 unless $resultNumber;
 			
-			&logMessage("INFO", "found $resultNumber record(s) for search-term q=$query");
-				
+			&logMessage("INFO", "found $resultNumber record(s) for $request");
+			
+			#TODO: proof
+			next if $saveResults eq "n";
+			
 #			foreach my $shardsInfo(%{$xmlRef->{'lst'}->{'shards.info'}->{'lst'}}){
 #				my $shardNumFound = $xmlRef->{'lst'}->{'shards.info'}->{'lst'}->{$shardsInfo}->{'long'}->{'numFound'}->{'content'};
 #				#$shardsInfo->{'str'}->{'content'} if exists $shardsInfo->{'str'};

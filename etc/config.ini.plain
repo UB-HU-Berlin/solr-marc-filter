@@ -7,6 +7,8 @@ pathToSolrCoresDefault = /CHANGE/THIS/PATH/solr/solr-4.X.X/example/solr/
 pathToSolrMarcDefault = /CHANGE/THIS/PATH/solrmarc/local_build/
 
 ;; Standard values
+; possible logging values: info,system,debug,warning,error
+logging = info,warning,error
 pathLogFile = log/log.txt
 pathLogFileAlternative = log/log_rest.txt
 ;; urlSolrDefault must have format http://IP:PORT/solr/

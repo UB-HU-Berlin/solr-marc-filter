@@ -10,13 +10,6 @@ use DateTime;
 ## time format
 our $timeFormat = '%Y-%m-%d'.'T'.'%H:%M:%S'.'Z';
 
-## set logging policies (1 -> debug, 0 -> do not debug)
-my $log_debug 	= 1;
-my $log_info	= 1;
-my $log_system	= 1;
-my $log_warning	= 1;
-my $log_error 	= 1;
-
 ## regex negative lookahead - if there is not a / at beginning
 our $reIsGlobalPath = "^(?!\/).+";
 
@@ -47,6 +40,24 @@ $ini_pathToSolrMarcDefault = $ini_pathToFachkatalogGlobal . $ini_pathToSolrMarcD
 our $ini_pathToSolrCoresDefault = $configs->{'_'}->{'pathToSolrCoresDefault'};
 $ini_pathToSolrCoresDefault = $ini_pathToFachkatalogGlobal . $ini_pathToSolrCoresDefault if($ini_pathToSolrMarcDefault =~ $reIsGlobalPath);
 
+## set logging policies
+my $log_info	= 0;
+my $log_debug 	= 0;
+my $log_system	= 0;
+my $log_warning	= 0;
+my $log_error 	= 1;
+
+if(exists $configs->{'_'}->{'logging'}){
+	(my $logging = $configs->{'_'}->{'logging'}) =~ s/\s//g;
+	my @log = split(',', lc($logging));
+	foreach my $l(@log){
+		$log_info	= 1 if($l eq "info");
+		$log_debug	= 1 if($l eq "debug");
+		$log_system	= 1 if($l eq "system");
+		$log_warning= 1 if($l eq "warning");
+		$log_error	= 1 if($l eq "error");
+	}
+}
 
 # values .. just save value
 our $ini_responseTimeout 			= $configs->{'_'}->{'serverResponseTimeoutSec'};
