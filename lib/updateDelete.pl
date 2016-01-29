@@ -60,7 +60,7 @@ sub updateDelete(@){
 				my $oldFileName = $dirDel."/".$file;
 				my $newFileName = $dirDel."/".$1.".del";
 				&renameFile($oldFileName, $newFileName, $verbund);
-				push(@filesWithIDs, $newFileName);
+				push(@filesWithIDs, substr($newFileName, length($dirDel."/")));
 			}
 		}
 		@filesWithIDs = sort @filesWithIDs;
