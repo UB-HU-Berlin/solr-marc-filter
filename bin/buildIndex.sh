@@ -36,9 +36,10 @@ then
 fi
 
 core=${array[$number]}
+
 indexAll=0
 
-if [[ $core -eq "ALL" ]]
+if [[ $core == "ALL" ]]
 then
 	echo "Are you shure to index the ALL Cores?. Check every index.properties file to make shure everything you want will be indicated."
 	indexAll=1
