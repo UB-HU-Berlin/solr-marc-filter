@@ -41,13 +41,14 @@ our $ini_pathToSolrCoresDefault = $configs->{'_'}->{'pathToSolrCoresDefault'};
 $ini_pathToSolrCoresDefault = $ini_pathToFachkatalogGlobal . $ini_pathToSolrCoresDefault if($ini_pathToSolrMarcDefault =~ $reIsGlobalPath);
 
 ## set logging policies
-my $log_info	= 0;
-my $log_debug 	= 0;
-my $log_system	= 0;
-my $log_warning	= 0;
+my $log_info	= 1;
+my $log_debug 	= 1;
+my $log_system	= 1;
+my $log_warning	= 1;
 my $log_error 	= 1;
 
 if(exists $configs->{'_'}->{'logging'}){
+	$log_info = $log_debug = $log_system = $log_warning = $log_error = 0;
 	(my $logging = $configs->{'_'}->{'logging'}) =~ s/\s//g;
 	my @log = split(',', lc($logging));
 	foreach my $l(@log){

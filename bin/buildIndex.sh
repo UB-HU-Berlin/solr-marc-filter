@@ -22,11 +22,11 @@ do
 done
 
 read number
-reNumber="^[0-$j]"
-while ! [[ $number =~ $reNumber ]]
+reNumber="^[0-9]$|^[1-9][0-9]$"
+while ! [[ $number =~ $reNumber ]] || [[ $number -gt $j ]]
 do
-   echo "Not a valid number!"
-   read number
+	echo "Not a valid number!"
+	read number
 done
 
 if [[ $number -eq "0" ]] ;
