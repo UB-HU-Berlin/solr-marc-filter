@@ -24,7 +24,7 @@ my $configs = Config::INI::Reader->read_file("$FindBin::Bin/../etc/config.ini");
 my $queries = Config::INI::Reader->read_file($ini_pathQuery);
 my $offset = $ARGV[0];
 $offset = 0 unless $offset;
-my $saveResults = $ARGV[1];
+my $saveResults = lc($ARGV[1]);
 $saveResults = "y" unless $saveResults;
 
 my @queries = keys %$queries;
@@ -38,7 +38,7 @@ foreach my $request(@queries){
 	# get the core-names where we have to do the search
 	my @verbuendeToSearch = split(",", $queries->{$request}->{'verbund'}) if $queries->{$request}->{'verbund'};
 	
-	&logMessage("WARNING", "no query in $request found .. skipping!") unless $query;
+	&logMessage("WARNING", "(search) no query in $request found .. skipping!") unless $query;
 	next unless $query;
 	
 	my $dateTime = &getTimeStr();
@@ -57,25 +57,29 @@ foreach my $request(@queries){
 		$url.="&shards.info=true";	# to get special information about different shards
 		$url.="&fl=marc_display";	# to get only the field marc_display, because other information is not needed
 		
-		open(my $output, "> $ini_pathResults"."$request"."_$dateTime"."_$verbund.$ini_resultType") or die("ERROR: Could not create output file: $!");
-		binmode $output, ":utf8";
-		
-		open(my $outputQuery, "> $ini_pathResults"."$request"."_$dateTime"."_$verbund"."_query.txt") or die("ERROR: Could not create output file: $!");
-		binmode $outputQuery, ":utf8";
-		
-		print $outputQuery "Query=$query\n\n";
-		print $outputQuery "URL=$url&rows=$rows&start=$start\n";
-		close($outputQuery);
+		my ($output, $outputQuery);
+		if($saveResults eq "y"){
+			open($output, "> $ini_pathResults"."$request"."_$dateTime"."_$verbund.$ini_resultType") or die("ERROR: Could not create output file: $!");
+			binmode $output, ":utf8";
+			
+			open($outputQuery, "> $ini_pathResults"."$request"."_$dateTime"."_$verbund"."_query.txt") or die("ERROR: Could not create output file: $!");
+			binmode $outputQuery, ":utf8";
+			
+			print $outputQuery "Query=$query\n\n";
+			print $outputQuery "URL=$url&rows=$rows&start=$start\n";
+			close($outputQuery);
+		}
+			
 		
 		my $ua = LWP::UserAgent->new;
 		$ua->timeout($ini_responseTimeout);
 		my $content = $ua->get($url."&rows=$rows&start=$start");
-		&logMessage("DEBUG", $url."&rows=$rows&start=$start");
+		&logMessage("DEBUG", "(search) ".$url."&rows=$rows&start=$start") if $saveResults eq "y";
 		
 		if($content->is_success){
 			
 			if(not $content){
-				&logMessage("ERROR", "Query $request was possible invalid");
+				&logMessage("ERROR", "(search) Query $request was possible invalid");
 				next;
 			}
 			
@@ -85,9 +89,9 @@ foreach my $request(@queries){
 			my $resultNumber = $xmlRef->{'result'}->{'numFound'};
 			$resultNumber = 0 unless $resultNumber;
 			
-			&logMessage("INFO", "found $resultNumber record(s) for $request");
+			&logMessage("INFO", "(search) found $resultNumber record(s) for $request");
 			
-			#TODO: proof
+			# skip everything else because we got the result number
 			next if $saveResults eq "n";
 			
 #			foreach my $shardsInfo(%{$xmlRef->{'lst'}->{'shards.info'}->{'lst'}}){
@@ -98,10 +102,10 @@ foreach my $request(@queries){
 #			}
 			
 			if($ini_resultsMaxNumber > 0 and $resultNumber > $ini_resultsMaxNumber){
-				&logMessage("ERROR", "found more results than allowed (increase resultsMaxNumber in config.ini to continue or use other search query)!");
+				&logMessage("ERROR", "(search) found more results than allowed (increase resultsMaxNumber in config.ini to continue or use other search query)!");
 				next;
 			}
-			&logMessage("INFO", "Writing result records into file(s)");
+			&logMessage("INFO", "(search) Writing result records into file(s)");
 			
 			# number of update files
 			my $n = 0;
@@ -139,7 +143,7 @@ foreach my $request(@queries){
 						}
 						else{
 							# should not happen!
-							&logMessage("DEBUG", "Record $i has no marc_display entry!");
+							&logMessage("DEBUG", "(search) Record $i has no marc_display entry!");
 						}
 						$i++;
 					}
@@ -171,14 +175,14 @@ foreach my $request(@queries){
 						}
 						else{
 							# should not happen!
-							&logMessage("DEBUG", "Record $i has no marc_display entry!");
+							&logMessage("DEBUG", "(search) Record $i has no marc_display entry!");
 						}
 						$i++;
 					}
 				}
 				else{
 					# just to avoid endless loop
-					&logMessage("DEBUG", "Else case that should not happen at record $i !");
+					&logMessage("DEBUG", "(search) Else case that should not happen at record $i !");
 					$i++;
 				}
 				
@@ -186,17 +190,17 @@ foreach my $request(@queries){
 				if($i % $rows == 0 and $i != 0){
 					$start = $i + $offset;
 					$content = $ua->get($url."&rows=$rows&start=$start");
-					&logMessage("DEBUG", $url."&rows=$rows&start=$start");
+					&logMessage("DEBUG", "(search) ".$url."&rows=$rows&start=$start");
 					$xmlRef = XMLin($content->{_content});
 				}
 			}
 			close($output);
-			&logMessage("INFO", "wrote results to $ini_pathResults");
+			&logMessage("INFO", "(search) wrote results to $ini_pathResults");
 			# just to get shure that the results will not be overwritten - sleep one second
 			sleep(1);
 		}
 		else{
-			&logMessage("ERROR", $content->status_line);
+			&logMessage("ERROR", "(search) ".$content->status_line);
 			next;
 		}
 	}

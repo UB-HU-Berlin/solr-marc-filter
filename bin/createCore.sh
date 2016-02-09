@@ -67,7 +67,7 @@ fi
 echo "Choose update intervals in days: "
 read updateIntervalInDays
 
-re='^[0-9]+$'
+re="^[0-9]+$"
 while ! [[ $updateIntervalInDays =~ $re ]];
 do
    echo "Choose update intervals in days:"
@@ -84,9 +84,9 @@ case "$updateType" in
 	reDate="^[1-2][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]"
 	d="[[:digit:]]"
 	while ! [[ $oaiOldestUpdate =~ $reDate ]]
-        do
-           echo "Format: yyyy-mm-dd"
-           read oaiOldestUpdate
+    do
+    	echo "Format: yyyy-mm-dd"
+        read oaiOldestUpdate
 	done
 	oaiOldestUpdate=$oaiOldestUpdate"T00:00:00Z"
 	coreSpecificString="oaiOldestUpdate = $oaiOldestUpdate"
@@ -110,7 +110,7 @@ case "$updateType" in
 	done
 	
 	if [ oaiMaxRecordsPerUpdatefile == 0 ]
-	do
+	then
 		oaiMaxRecordsPerUpdatefile=10000
 	fi
 	

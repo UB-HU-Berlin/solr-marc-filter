@@ -17,6 +17,6 @@ then
 	echo "Writing all results greater $offset .."
 	perl ../lib/getResults.pl $offset $saveResults
 else
-	echo "Writing all results .."
+	echo "Writing no results .."
 	perl ../lib/getResults.pl 0 $saveResults
 fi
